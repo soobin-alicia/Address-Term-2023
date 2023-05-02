@@ -27,26 +27,51 @@ head(brobruh)
 ```
 
 ```{r}
-# minor changes in column and dataset
-
-original <- original %>% 
-  rename(`RESP-ID` = ResponseId) 
- 
-original <- original %>% 
+# remove NAs in AT-EVER-USE and AGE column
+original1 <- original %>% 
+  rename(`RESP-ID` = ResponseId) %>% 
   rename(ATUSE = `AT-EVER-USE`) %>% 
-  filter(!is.na(ATUSE))
+  filter(!is.na(ATUSE) & !is.na(AGE))
 
-original <- original %>% 
+# remove 'other' genders and move columns for better looking
+original2 <- original1 %>% 
   mutate(`RESP-GENDER` = str_to_title(`RESP-GENDER`),
-         `ADDR-GENDER` = str_to_title(`ADDR-GENDER`)) %>% 
-  filter(`RESP-GENDER` != c("Other (Please State):")) %>% 
-  select(-`GENDER-4-TEXT`) %>% 
+         `ADDR-GENDER` = str_to_title(`ADDR-GENDER`)) %>%
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine", "Non-Binary")) %>% 
   relocate(`ADDR-GENDER`, .after="RESP-GENDER")
 
-# incorporate 'Over 70' to '56-70'
-original <- original %>% 
-  map(~ str_replace_all(., c("56-70", "Over 70"), "57-Over 70")) %>% 
-  as_data_frame()
+```
+
+
+Since it is hard to make plots when each rank is column, I need to change each column into value.
+
+```{r}
+
+# test if it works
+toy_df <- head(original2, 20)
+
+toy_df %>% 
+  pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY")
+
+
+# good to go
+original2 %>% 
+  pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY")
+```
+
+
+```{r}
+# incorporate 'Over 70' to '56-70' + convert columns into values
+
+original2 %>% 
+  select(AGE) %>% 
+  unique()
+
+org_clean <- original2 %>% 
+  mutate_all(funs(str_replace_all(., "56-70", "Over 70"))) %>% 
+  mutate_all(funs(str_replace_all(., "Over 70", "56-Over 70"))) %>% 
+  pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY") %>% 
+  select(-`GENDER-4-TEXT`)
 
 ```
 
@@ -57,65 +82,85 @@ original <- original %>%
 
 ```{r}
 # check the count of each age category
-original %>% 
+org_clean %>% 
   filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
   na.omit(AGE) %>% 
   group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
-  summarise(n = n()) %>%
-  ggplot(aes(x = `ADDR-GENDER`, fill = `RESP-GENDER`)) %>% 
-  facet_wrap()
+  summarise(Count = n())
+
+# Count of each resp-gender category
+org_clean %>% 
+  group_by(`RESP-GENDER`) %>% 
+  summarise(n = n_distinct(`RESP-ID`))
+
+# Plot - Dude Usage by gender and age - non-binary excluded
+org_clean %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  na.omit(AGE) %>% 
+  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(Count = n()) %>% 
+  ggplot(aes(x = `ADDR-GENDER`, y = Count, fill = `RESP-GENDER`)) +
+  facet_wrap(vars(AGE), ncol = 4) + 
+  geom_col(position = "dodge") + 
+  labs(title = "Dude Usage by gender and age - non-binary excluded")
+
+
+# 이거를 퍼센티지로 표현해야 할 것 같은데..
+```
+
+```{r}
+# Dude usage, WITHOUT considering age category
+
+org_clean %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  na.omit(AGE) %>% 
+  group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(Count = n_distinct(`RESP-ID`)) %>% 
+  ggplot(aes(x = `ADDR-GENDER`, y = Count, fill = `RESP-GENDER`)) +
+  geom_col(position = "dodge") + 
+  labs(title = "Dude Usage by gender - non-binary excluded")
+  
+
 ```
 
 
 ## The usage of *dude* and *bro* by gender - non-binary exclusive
 
 ```{r}
-# sort dude and bro only
+# sort people who use dude and/or bro
 
-dudebro <- original %>% 
+dudebro <- org_clean %>% 
   filter(grepl("dude", original$ATUSE) == TRUE | grepl("bro", original$ATUSE) == TRUE)
   
 
 ```
 
-
-Since it is hard to make plots when each rank is column, I need to change each column into value.
-
 ```{r}
-
-# test if it works
-toy_df <- head(dudebro, 20)
-
-toy_df <- dudebro %>% 
-  pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY")
-
-
-# good to go
-dudebro2 <- dudebro %>% 
-  pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY")
+dudebro %>% 
+  select(`RESP-GENDER`, `ADDR-GENDER`) %>% 
+  unique()
 ```
-
 
 
 ```{r}
 # plot - dude/bro usage by rank and gender
 
-dudebro2 %>% 
-  filter(TERM %in% c("DUDE", "BRO"), `RESP-GENDER` %in% c("Feminine", "Masculine"), `ADDR-GENDER` %in% c("FEMININE", "MASCULINE")) %>% 
+dudebro %>% 
+  filter(TERM %in% c("DUDE", "BRO"), `RESP-GENDER` != c("Non-Binary")) %>% 
   group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `ADDR-RANK`) %>% 
-  summarise(mean_freq = mean(FREQUENCY, na.rm = TRUE)) %>% 
+  summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
   ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = TERM, col = TERM)) +
   facet_wrap(`ADDR-GENDER`~`RESP-GENDER`, ncol = 1, strip.position = "right", 
              labeller = labeller(
-               `ADDR-GENDER` = c(`FEMININE`="Addr_F", `MASCULINE`="Addr_M"),
+               `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"),
                `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"))) + 
   geom_line() +
   geom_point() + 
   scale_y_continuous(limits = c(0, 4)) +
-  labs(title = "Compare dude/bro based on interlocutors' gender", x = 'Relationship')
+  labs(title = "Compare dude/bro based on interlocutors' gender (non-binary exclusive)", x = 'Relationship')
   
 
-dudebro2 %>% 
+dudebro %>% 
   filter(TERM %in% c("DUDE", "BRO") & `RESP-GENDER` %in% c("Feminine", "Masculine") & `ADDR-GENDER` %in% c("FEMININE", "MASCULINE")) %>% 
   group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `ADDR-RANK`) %>% 
   summarise(mean_freq = mean(FREQUENCY, na.rm = TRUE))
