@@ -62,7 +62,6 @@ original %>%
   na.omit(AGE) %>% 
   group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
   summarise(n = n()) %>%
-  show
   ggplot(aes(x = `ADDR-GENDER`, fill = `RESP-GENDER`)) %>% 
   facet_wrap()
 ```
