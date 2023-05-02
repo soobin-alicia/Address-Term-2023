@@ -16,6 +16,9 @@ Soobin Choi
     id="toc-the-usage-of-dude-and-bro-by-gender---non-binary-exclusive">The
     usage of <em>dude</em> and <em>bro</em> by gender - non-binary
     exclusive</a>
+  - <a href="#is-there-any-difference-in-the-usage-of-dude-by-race"
+    id="toc-is-there-any-difference-in-the-usage-of-dude-by-race">Is there
+    any difference in the usage of <em>dude</em> by race?</a>
 
 ``` r
 knitr::opts_chunk$set(echo=TRUE, include=TRUE, comment="")
@@ -185,8 +188,7 @@ original2 %>%
     #   ²​`ADDR-GENDER`, ³​`GENDER-4-TEXT`, ⁴​SEXUALITY, ⁵​LANGUAGE, ⁶​OCCUPATION
 
 ``` r
-# incorporate 'Over 70' to '56-70' + convert columns into values
-
+# check the categories in AGE column
 original2 %>% 
   select(AGE) %>% 
   unique()
@@ -202,6 +204,7 @@ original2 %>%
     5 Over 70
 
 ``` r
+# incorporate 'Over 70' to '56-70' + convert columns into values
 org_clean <- original2 %>% 
   mutate_all(funs(str_replace_all(., "56-70", "Over 70"))) %>% 
   mutate_all(funs(str_replace_all(., "Over 70", "56-Over 70"))) %>% 
@@ -223,6 +226,8 @@ org_clean <- original2 %>%
       list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
     This warning is displayed once every 8 hours.
     Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
+
+Okay, I have left with 26,439 values in total.
 
 # Analysis & Plots
 
@@ -268,6 +273,7 @@ dude_df %>%
 
 ``` r
 # Count of each resp-gender category
+
 dude_df %>% 
   group_by(`RESP-GENDER`) %>% 
   summarise(n = n_distinct(`RESP-ID`))
@@ -322,36 +328,69 @@ dude_df %>%
 
 ``` r
 # 이거를 퍼센티지로 표현해야 할 것 같은데..
-
 dude_df %>% 
   filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
   group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
-  summarise(Count = n_distinct(`RESP-ID`))
+  summarise(Count = n_distinct(`RESP-ID`)) %>% 
+  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  show
 ```
 
     `summarise()` has grouped output by 'AGE', 'ADDR-GENDER'. You can override
     using the `.groups` argument.
 
-    # A tibble: 16 × 4
-    # Groups:   AGE, ADDR-GENDER [8]
-       AGE        `ADDR-GENDER` `RESP-GENDER` Count
-       <chr>      <chr>         <chr>         <int>
-     1 18-25      Feminine      Feminine         32
-     2 18-25      Feminine      Masculine        21
-     3 18-25      Masculine     Feminine         39
-     4 18-25      Masculine     Masculine        21
-     5 26-40      Feminine      Feminine         54
-     6 26-40      Feminine      Masculine        27
-     7 26-40      Masculine     Feminine         54
-     8 26-40      Masculine     Masculine        29
-     9 41-55      Feminine      Feminine         85
-    10 41-55      Feminine      Masculine        34
-    11 41-55      Masculine     Feminine         97
-    12 41-55      Masculine     Masculine        29
-    13 56-Over 70 Feminine      Feminine         34
-    14 56-Over 70 Feminine      Masculine        13
-    15 56-Over 70 Masculine     Feminine         21
-    16 56-Over 70 Masculine     Masculine        11
+    # A tibble: 16 × 3
+    # Groups:   AGE [4]
+       AGE        Gender              Count
+       <chr>      <chr>               <int>
+     1 18-25      Feminine_Feminine      32
+     2 18-25      Masculine_Feminine     21
+     3 18-25      Feminine_Masculine     39
+     4 18-25      Masculine_Masculine    21
+     5 26-40      Feminine_Feminine      54
+     6 26-40      Masculine_Feminine     27
+     7 26-40      Feminine_Masculine     54
+     8 26-40      Masculine_Masculine    29
+     9 41-55      Feminine_Feminine      85
+    10 41-55      Masculine_Feminine     34
+    11 41-55      Feminine_Masculine     97
+    12 41-55      Masculine_Masculine    29
+    13 56-Over 70 Feminine_Feminine      34
+    14 56-Over 70 Masculine_Feminine     13
+    15 56-Over 70 Feminine_Masculine     21
+    16 56-Over 70 Masculine_Masculine    11
+
+``` r
+'
+dude_df %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(count = n_distinct(`RESP-ID`)) %>% 
+  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  ggplot(aes(x = AGE, weight = count, fill = Gender)) +
+  geom_bar(position = "dodge")
+'
+```
+
+    [1] "\ndude_df %>% \n  filter(TERM == \"DUDE\" & `RESP-GENDER` != \"Non-Binary\") %>% \n  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% \n  summarise(count = n_distinct(`RESP-ID`)) %>% \n  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% \n  ggplot(aes(x = AGE, weight = count, fill = Gender)) +\n  geom_bar(position = \"dodge\")\n"
+
+``` r
+# Plot - dodge barplot
+dude_df %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(count = n_distinct(`RESP-ID`)) %>% 
+  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  ggplot(aes(x = AGE, y = count, fill = Gender)) +
+  geom_col(position = "dodge") + 
+  geom_text(aes(label = count), position = position_dodge(1), vjust = -0.7) +
+  ylim(0, 105)
+```
+
+    `summarise()` has grouped output by 'AGE', 'ADDR-GENDER'. You can override
+    using the `.groups` argument.
+
+![](AT2023_code_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 # Dude usage, WITHOUT considering age category
@@ -368,7 +407,7 @@ dude_df %>%
     `summarise()` has grouped output by 'ADDR-GENDER'. You can override using the
     `.groups` argument.
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](AT2023_code_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 dude_df %>% 
@@ -388,7 +427,7 @@ dude_df %>%
 
     Warning: Ignoring unknown aesthetics: nudge_y
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
+![](AT2023_code_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
 
 ## Use of dude by Gender of Speaker and Addressee (2023)
 
@@ -406,7 +445,7 @@ dude_df %>%
     `summarise()` has grouped output by 'ADDR-GENDER'. You can override using the
     `.groups` argument.
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](AT2023_code_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 # Table
@@ -414,7 +453,8 @@ dude_df %>%
 dude_df %>% 
   filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
   group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
-  summarise(Count = n_distinct(`RESP-ID`))
+  summarise(Count = n_distinct(`RESP-ID`)) %>% 
+  show()
 ```
 
     `summarise()` has grouped output by 'ADDR-GENDER'. You can override using the
@@ -475,7 +515,7 @@ dudebro %>%
     `summarise()` has grouped output by 'RESP-GENDER', 'ADDR-GENDER', 'TERM'. You
     can override using the `.groups` argument.
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](AT2023_code_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 dudebro %>% 
@@ -491,3 +531,27 @@ dudebro %>%
     # Groups:   RESP-GENDER, ADDR-GENDER, TERM [0]
     # … with 5 variables: RESP-GENDER <chr>, ADDR-GENDER <chr>, TERM <chr>,
     #   ADDR-RANK <chr>, mean_freq <dbl>
+
+## Is there any difference in the usage of *dude* by race?
+
+``` r
+org_clean %>% 
+  mutate(RACE = str_to_title(RACE)) %>% 
+  group_by(RACE) %>% 
+  summarize(n = n_distinct(`RESP-ID`))
+```
+
+    # A tibble: 79 × 2
+       RACE                         n
+       <chr>                    <int>
+     1 African American             1
+     2 Anglo                        1
+     3 Anglo Australian (White)     1
+     4 Arab                         1
+     5 Ashkenazi Jewish             1
+     6 Asian                        6
+     7 Asian-American               1
+     8 Asian Indian                 2
+     9 Asian, Korean                1
+    10 Australian                   1
+    # … with 69 more rows

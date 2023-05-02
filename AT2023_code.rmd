@@ -61,19 +61,22 @@ original2 %>%
 
 
 ```{r}
-# incorporate 'Over 70' to '56-70' + convert columns into values
-
+# check the categories in AGE column
 original2 %>% 
   select(AGE) %>% 
   unique()
 
+# incorporate 'Over 70' to '56-70' + convert columns into values
 org_clean <- original2 %>% 
   mutate_all(funs(str_replace_all(., "56-70", "Over 70"))) %>% 
   mutate_all(funs(str_replace_all(., "Over 70", "56-Over 70"))) %>% 
   pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY") %>% 
-  select(-`GENDER-4-TEXT`)
+  select(-`GENDER-4-TEXT`) %>% 
+  mutate(FREQUENCY = as.numeric(FREQUENCY))
 
 ```
+
+Okay, I have left with 26,439 values in total.
 
 
 # Analysis & Plots
@@ -81,46 +84,120 @@ org_clean <- original2 %>%
 ## The usage of *DUDE* by gender and age
 
 ```{r}
+# sort 'dude' only
+dude_df <- org_clean %>% 
+  filter(grepl("dude", org_clean$ATUSE) == TRUE)
+
+
 # check the count of each age category
-org_clean %>% 
+dude_df %>% 
   filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
   na.omit(AGE) %>% 
   group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
-  summarise(Count = n())
+  summarise(Count = n_distinct(`RESP-ID`))
 
 # Count of each resp-gender category
-org_clean %>% 
+
+dude_df %>% 
   group_by(`RESP-GENDER`) %>% 
   summarise(n = n_distinct(`RESP-ID`))
 
+
+dude_df %>% 
+  filter(TERM == "DUDE")
+
 # Plot - Dude Usage by gender and age - non-binary excluded
-org_clean %>% 
+
+dude_df %>% 
   filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
-  na.omit(AGE) %>% 
   group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
-  summarise(Count = n()) %>% 
+  summarise(Count = n_distinct(`RESP-ID`)) %>% 
   ggplot(aes(x = `ADDR-GENDER`, y = Count, fill = `RESP-GENDER`)) +
   facet_wrap(vars(AGE), ncol = 4) + 
   geom_col(position = "dodge") + 
   labs(title = "Dude Usage by gender and age - non-binary excluded")
 
 
+
+
 # 이거를 퍼센티지로 표현해야 할 것 같은데..
+dude_df %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(Count = n_distinct(`RESP-ID`)) %>% 
+  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  show
 ```
+
+
+```{r}
+
+'
+dude_df %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(count = n_distinct(`RESP-ID`)) %>% 
+  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  ggplot(aes(x = AGE, weight = count, fill = Gender)) +
+  geom_bar(position = "dodge")
+'
+
+# Plot - dodge barplot
+dude_df %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(count = n_distinct(`RESP-ID`)) %>% 
+  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  ggplot(aes(x = AGE, y = count, fill = Gender)) +
+  geom_col(position = "dodge") + 
+  geom_text(aes(label = count), position = position_dodge(1), vjust = -0.7) +
+  ylim(0, 105)
+```
+
+
 
 ```{r}
 # Dude usage, WITHOUT considering age category
 
-org_clean %>% 
+dude_df %>% 
   filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
-  na.omit(AGE) %>% 
   group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
   summarise(Count = n_distinct(`RESP-ID`)) %>% 
   ggplot(aes(x = `ADDR-GENDER`, y = Count, fill = `RESP-GENDER`)) +
   geom_col(position = "dodge") + 
   labs(title = "Dude Usage by gender - non-binary excluded")
   
+dude_df %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  na.omit(FREQUENCY) %>% 
+  group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(mean_freq = mean(FREQUENCY)) %>% 
+  ggplot(aes(x = `RESP-GENDER`, y = mean_freq, col = `ADDR-GENDER`, group = `ADDR-GENDER`))+
+  geom_point() + 
+  geom_text(aes(label = round(mean_freq, 2), vjust = -0.5, nudge_y = 0.1)) +
+  geom_path() +
+  ylim(1.9, 2.6)
+```
 
+## Use of dude by Gender of Speaker and Addressee (2023)
+
+```{r}
+# Plot
+dude_df %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(Count = n_distinct(`RESP-ID`)) %>% 
+  ggplot(aes(x = `ADDR-GENDER`, y = Count, fill = `RESP-GENDER`)) +
+  geom_col(position = "dodge") + 
+  labs(title = "Dude Usage by gender - non-binary excluded")
+
+# Table
+
+dude_df %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(Count = n_distinct(`RESP-ID`)) %>% 
+  show()
 ```
 
 
@@ -130,7 +207,7 @@ org_clean %>%
 # sort people who use dude and/or bro
 
 dudebro <- org_clean %>% 
-  filter(grepl("dude", original$ATUSE) == TRUE | grepl("bro", original$ATUSE) == TRUE)
+  filter(grepl("dude", org_clean$ATUSE) == TRUE | grepl("bro", org_clean$ATUSE) == TRUE)
   
 
 ```
@@ -166,9 +243,13 @@ dudebro %>%
   summarise(mean_freq = mean(FREQUENCY, na.rm = TRUE))
 ```
 
+## Is there any difference in the usage of *dude* by race?
 
 ```{r}
-
+org_clean %>% 
+  mutate(RACE = str_to_title(RACE)) %>% 
+  group_by(RACE) %>% 
+  summarize(n = n_distinct(`RESP-ID`))
 ```
 
 
