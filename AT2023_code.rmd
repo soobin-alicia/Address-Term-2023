@@ -11,5 +11,131 @@ output:
 knitr::opts_chunk$set(echo=TRUE, include=TRUE, comment="")
 library(tidyverse)
 library(dplyr)
+library(ggplot2)
 ```
+
+# Data Processing
+
+```{r}
+original <- read_csv("data/original_full.csv")
+rank_sent <- read_csv("data/rank_sent.csv")
+brobruh <- read_csv("data/brobruh.csv")
+
+head(original)
+head(rank_sent)
+head(brobruh)
+```
+
+```{r}
+# minor changes in column and dataset
+
+original <- original %>% 
+  rename(`RESP-ID` = ResponseId) 
+ 
+original <- original %>% 
+  rename(ATUSE = `AT-EVER-USE`) %>% 
+  filter(!is.na(ATUSE))
+
+original <- original %>% 
+  mutate(`RESP-GENDER` = str_to_title(`RESP-GENDER`),
+         `ADDR-GENDER` = str_to_title(`ADDR-GENDER`)) %>% 
+  filter(`RESP-GENDER` != c("Other (Please State):")) %>% 
+  select(-`GENDER-4-TEXT`) %>% 
+  relocate(`ADDR-GENDER`, .after="RESP-GENDER")
+
+# incorporate 'Over 70' to '56-70'
+original <- original %>% 
+  map(~ str_replace_all(., c("56-70", "Over 70"), "57-Over 70")) %>% 
+  as_data_frame()
+
+```
+
+
+# Analysis & Plots
+
+## The usage of *DUDE* by gender and age
+
+```{r}
+# check the count of each age category
+original %>% 
+  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
+  na.omit(AGE) %>% 
+  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
+  summarise(n = n()) %>%
+  show
+  ggplot(aes(x = `ADDR-GENDER`, fill = `RESP-GENDER`)) %>% 
+  facet_wrap()
+```
+
+
+## The usage of *dude* and *bro* by gender - non-binary exclusive
+
+```{r}
+# sort dude and bro only
+
+dudebro <- original %>% 
+  filter(grepl("dude", original$ATUSE) == TRUE | grepl("bro", original$ATUSE) == TRUE)
+  
+
+```
+
+
+Since it is hard to make plots when each rank is column, I need to change each column into value.
+
+```{r}
+
+# test if it works
+toy_df <- head(dudebro, 20)
+
+toy_df <- dudebro %>% 
+  pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY")
+
+
+# good to go
+dudebro2 <- dudebro %>% 
+  pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY")
+```
+
+
+
+```{r}
+# plot - dude/bro usage by rank and gender
+
+dudebro2 %>% 
+  filter(TERM %in% c("DUDE", "BRO"), `RESP-GENDER` %in% c("Feminine", "Masculine"), `ADDR-GENDER` %in% c("FEMININE", "MASCULINE")) %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `ADDR-RANK`) %>% 
+  summarise(mean_freq = mean(FREQUENCY, na.rm = TRUE)) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = TERM, col = TERM)) +
+  facet_wrap(`ADDR-GENDER`~`RESP-GENDER`, ncol = 1, strip.position = "right", 
+             labeller = labeller(
+               `ADDR-GENDER` = c(`FEMININE`="Addr_F", `MASCULINE`="Addr_M"),
+               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"))) + 
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 4)) +
+  labs(title = "Compare dude/bro based on interlocutors' gender", x = 'Relationship')
+  
+
+dudebro2 %>% 
+  filter(TERM %in% c("DUDE", "BRO") & `RESP-GENDER` %in% c("Feminine", "Masculine") & `ADDR-GENDER` %in% c("FEMININE", "MASCULINE")) %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `ADDR-RANK`) %>% 
+  summarise(mean_freq = mean(FREQUENCY, na.rm = TRUE))
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
