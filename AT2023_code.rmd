@@ -18,12 +18,7 @@ library(ggplot2)
 
 ```{r}
 original <- read_csv("data/original_full.csv")
-rank_sent <- read_csv("data/rank_sent.csv")
-brobruh <- read_csv("data/brobruh.csv")
-
 head(original)
-head(rank_sent)
-head(brobruh)
 ```
 
 ```{r}
@@ -74,14 +69,21 @@ org_clean <- original2 %>%
   select(-`GENDER-4-TEXT`) %>% 
   mutate(FREQUENCY = as.numeric(FREQUENCY))
 
+# make another column - clean up `SEXUALITY` column as binary value
+org_clean <- org_clean %>%
+  mutate(SEXUALITY2 = grepl("(het|straight)", tolower(org_clean$SEXUALITY))) %>% 
+  relocate(SEXUALITY2, .after = SEXUALITY) %>% 
+  map_dfr(~ str_replace_all(., c("TRUE" = "Hetero", "FALSE" = "Non-Hetero"))) %>% 
+  mutate(FREQUENCY = as.numeric(FREQUENCY))
 ```
 
 Okay, I have left with 26,439 values in total.
 
+# Address Term
 
-# Analysis & Plots
+## Analysis & Plots
 
-## The usage of *DUDE* by gender and age
+### The usage of *dude* by gender and age
 
 ```{r}
 # sort 'dude' only
@@ -102,10 +104,10 @@ dude_df %>%
   group_by(`RESP-GENDER`) %>% 
   summarise(n = n_distinct(`RESP-ID`))
 
+```
 
-dude_df %>% 
-  filter(TERM == "DUDE")
 
+```{r}
 # Plot - Dude Usage by gender and age - non-binary excluded
 
 dude_df %>% 
@@ -116,8 +118,6 @@ dude_df %>%
   facet_wrap(vars(AGE), ncol = 4) + 
   geom_col(position = "dodge") + 
   labs(title = "Dude Usage by gender and age - non-binary excluded")
-
-
 
 
 # 이거를 퍼센티지로 표현해야 할 것 같은데..
@@ -154,7 +154,7 @@ dude_df %>%
   ylim(0, 105)
 ```
 
-
+#### *Dude* WITHOUT considering `AGE`
 
 ```{r}
 # Dude usage, WITHOUT considering age category
@@ -179,7 +179,7 @@ dude_df %>%
   ylim(1.9, 2.6)
 ```
 
-## Use of dude by Gender of Speaker and Addressee (2023)
+#### Use of dude by Gender of Speaker and Addressee (2023)
 
 ```{r}
 # Plot
@@ -192,7 +192,6 @@ dude_df %>%
   labs(title = "Dude Usage by gender - non-binary excluded")
 
 # Table
-
 dude_df %>% 
   filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
   group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
@@ -201,7 +200,7 @@ dude_df %>%
 ```
 
 
-## The usage of *dude* and *bro* by gender - non-binary exclusive
+### The usage of *dude* and *bro* by gender - non-binary exclusive
 
 ```{r}
 # sort people who use dude and/or bro
@@ -243,7 +242,7 @@ dudebro %>%
   summarise(mean_freq = mean(FREQUENCY, na.rm = TRUE))
 ```
 
-## Is there any difference in the usage of *dude* by race?
+### Is there any difference in the usage of *dude* by race?
 
 ```{r}
 org_clean %>% 
@@ -252,8 +251,253 @@ org_clean %>%
   summarize(n = n_distinct(`RESP-ID`))
 ```
 
+# Sentence Rank
+
+## Data Processing
+
+```{r}
+# load the data
+rank_sent <- read_csv("data/rank_sent.csv")
+head(rank_sent)
 
 
+rank_clean <- rank_sent %>% 
+  select(-Q23) %>% 
+  rename(`RESP-ID` = ResponseId,
+         ATUSE = `AT ever use`)
+```
+
+
+## Analysis
+
+### Organize by question
+
+#### MEETING
+
+```{r}
+colnames(rank_clean)
+
+rank_clean %>% 
+  select(contains(c("ID", "MUSIC")))
+```
+
+
+```{r}
+meeting <- rank_clean %>% 
+  select(contains(c("ID", "MEETING")))
+
+meeting_final <- meeting %>% 
+  rename_with(., ~gsub("MEETING-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Meeting", .after = TERM)
+
+meeting %>% 
+  rename_with(., ~gsub("MEETING-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  ggplot(aes(x = TERM, y = mean_rank)) +
+  geom_path(group = 1, color = "dark green") +
+  geom_point(color = "dark green") + 
+  geom_text(aes(label = round(mean_rank, 2), hjust = -0.7, nudge_x = 0.1), color = "dark green") +
+  scale_y_reverse(limits = c(5, 0.5)) +
+  labs(title = "Mean Rank - \"When is the meeting?\"")
+  
+```
+
+#### MUSIC
+
+```{r}
+music <- rank_clean %>% 
+  select(contains(c("ID", "MUSIC")))
+
+music_final <- music %>% 
+  rename_with(., ~gsub("MUSIC-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Music", .after = TERM)
+```
+
+
+#### SHUTUP
+
+```{r}
+shutup <- rank_clean %>% 
+  select(contains(c("ID", "SHUTUP")))
+
+shutup_final <- shutup %>% 
+  rename_with(., ~gsub("SHUTUP-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Shut up", .after = TERM)
+```
+
+#### GOODTOSEE
+
+```{r}
+goodtosee <- rank_clean %>% 
+  select(contains(c("ID", "GOODTOSEE")))
+
+goodtosee_final <- goodtosee %>% 
+  rename_with(., ~gsub("GOODTOSEE-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Good to see", .after = TERM)
+```
+
+#### SIGNAL
+
+```{r}
+signal <- rank_clean %>% 
+  select(contains(c("ID", "SIGNAL")))
+
+
+signal_final <- signal %>% 
+  rename_with(., ~gsub("SIGNAL-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Signal", .after = TERM)
+```
+
+
+#### EMAIL
+
+```{r}
+email <- rank_clean %>% 
+  select(contains(c("ID", "EMAIL")))
+
+
+email_final <- email %>% 
+  rename_with(., ~gsub("EMAIL-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Email", .after = TERM)
+```
+
+#### Combine all the results
+
+```{r}
+sent_final <- rbind(meeting_final, music_final, goodtosee_final, shutup_final, signal_final, email_final)
+
+sent_final %>% 
+  group_by(TERM) %>% 
+  summarize(mean = mean(mean_rank))
+
+sent_final %>% 
+  ggplot(aes(x = TERM, y = mean_rank, group = SENT, col = SENT)) +
+  geom_path() +
+  geom_point() + 
+  scale_y_reverse(limits = c(4, 1))
+  scale_x_discrete(limits = c("DUDE", "BRO", "BRUH", "GIRL"))
+
+```
+
+
+
+# *Bro* vs. *Bruh* - Difference
+
+## Data Processing 
+
+```{r}
+library(tidytext)
+library(stopwords)
+brobruh <- read_csv("data/brobruh.csv")
+head(brobruh)
+```
+
+```{r}
+# tokenize the response by sentence, sort out the columns we don't need
+brobruh2 <- brobruh %>% 
+  rename(ANSWER = Q23) %>% 
+  select(-c(`GENDER-4-TEXT`, `AT ever use`)) %>% 
+  unnest_tokens(`SENT-TOK`, ANSWER, token = "sentences") %>% 
+# need to split the sents by comma, too.
+  unnest_tokens(`SENT-TOK2`, `SENT-TOK`, token = stringr::str_split, pattern = ",") %>% 
+  na.omit(`SENT-TOK`)
+
+
+```
+
+
+```{r}
+brobruh_clean <- brobruh2 %>% 
+  mutate(BRO = grepl('bro', `SENT-TOK2`),
+         BRUH = grepl("bruh", `SENT-TOK2`)) %>% 
+  relocate(BRO, BRUH, .before = `SENT-TOK2`)
+
+bro_clean <- brobruh_clean %>% 
+  filter(BRO == TRUE & BRUH == FALSE)
+
+bruh_clean <- brobruh_clean %>% 
+  filter(BRO == FALSE & BRUH == TRUE)
+
+
+head(bro_clean)
+head(bruh_clean)
+```
+
+## Analysis?
+
+```{r}
+# load up stopwords
+snowball <- stopwords(language = "en", source = "snowball", simplify = TRUE)
+nltk <- stopwords(language = "en", source = "nltk", simplify = TRUE)
+smart <- stopwords(language = "en", source = "smart", simplify = TRUE)
+
+# clean up -- sents containing 'bro'
+bro_final <- bro_clean %>% 
+  unnest_tokens(TOKEN, `SENT-TOK2`) %>%
+  filter(!(TOKEN %in% snowball | TOKEN %in% nltk | TOKEN %in% smart | 
+           TOKEN %in% c("bro", "bros", "bruh", "don’t", 'i’m', 'it’s',
+                        'people', "person", 'term', "address", "expression", "feel", "feels")))
+
+
+# clean up -- sents containing 'bruh'
+bruh_final <- bruh_clean %>% 
+  unnest_tokens(TOKEN, `SENT-TOK2`) %>% 
+  filter(!(TOKEN %in% snowball | TOKEN %in% nltk | TOKEN %in% smart | 
+           TOKEN %in% c("bro", "bros", "bruh", "don’t", 'i’m', 'it’s',
+                        'people', "person", 'term', "address", "expression", "feel", "feels")))
+```
+
+### Plot
+
+```{r}
+# `bro` plot
+
+bro_final %>% 
+  count(TOKEN, sort = TRUE, name = "Count") %>% 
+  mutate(TOKEN = reorder(TOKEN, Count)) %>% 
+  head(20) %>% 
+  ggplot(aes(x = Count, y = TOKEN)) +
+  geom_col() + 
+  labs(title = "Top 20 Tokens Used to Describe 'Bro'")
+```
+
+```{r}
+#`bruh` plot
+bruh_final %>% 
+  count(TOKEN, sort = TRUE, name = "Count") %>% 
+  mutate(TOKEN = reorder(TOKEN, Count)) %>% 
+  head(20) %>% 
+  ggplot(aes(x = Count, y = TOKEN)) +
+  geom_col() + 
+  labs(title = "Top 20 Tokens Used to Describe 'Bruh'")
+```
 
 
 

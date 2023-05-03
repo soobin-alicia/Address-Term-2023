@@ -4,21 +4,32 @@ Soobin Choi
 2023-05-01
 
 - <a href="#data-processing" id="toc-data-processing">Data Processing</a>
-- <a href="#analysis--plots" id="toc-analysis--plots">Analysis &amp;
-  Plots</a>
-  - <a href="#the-usage-of-dude-by-gender-and-age"
-    id="toc-the-usage-of-dude-by-gender-and-age">The usage of <em>DUDE</em>
-    by gender and age</a>
-  - <a href="#use-of-dude-by-gender-of-speaker-and-addressee-2023"
-    id="toc-use-of-dude-by-gender-of-speaker-and-addressee-2023">Use of dude
-    by Gender of Speaker and Addressee (2023)</a>
-  - <a href="#the-usage-of-dude-and-bro-by-gender---non-binary-exclusive"
-    id="toc-the-usage-of-dude-and-bro-by-gender---non-binary-exclusive">The
-    usage of <em>dude</em> and <em>bro</em> by gender - non-binary
-    exclusive</a>
-  - <a href="#is-there-any-difference-in-the-usage-of-dude-by-race"
-    id="toc-is-there-any-difference-in-the-usage-of-dude-by-race">Is there
-    any difference in the usage of <em>dude</em> by race?</a>
+- <a href="#address-term" id="toc-address-term">Address Term</a>
+  - <a href="#analysis--plots" id="toc-analysis--plots">Analysis &amp;
+    Plots</a>
+    - <a href="#the-usage-of-dude-by-gender-and-age"
+      id="toc-the-usage-of-dude-by-gender-and-age">The usage of <em>dude</em>
+      by gender and age</a>
+    - <a href="#the-usage-of-dude-and-bro-by-gender---non-binary-exclusive"
+      id="toc-the-usage-of-dude-and-bro-by-gender---non-binary-exclusive">The
+      usage of <em>dude</em> and <em>bro</em> by gender - non-binary
+      exclusive</a>
+    - <a href="#is-there-any-difference-in-the-usage-of-dude-by-race"
+      id="toc-is-there-any-difference-in-the-usage-of-dude-by-race">Is there
+      any difference in the usage of <em>dude</em> by race?</a>
+- <a href="#sentence-rank" id="toc-sentence-rank">Sentence Rank</a>
+  - <a href="#data-processing-1" id="toc-data-processing-1">Data
+    Processing</a>
+  - <a href="#analysis" id="toc-analysis">Analysis</a>
+    - <a href="#organize-by-question" id="toc-organize-by-question">Organize
+      by question</a>
+- <a href="#bro-vs-bruh---difference"
+  id="toc-bro-vs-bruh---difference"><em>Bro</em> vs. <em>Bruh</em> -
+  Difference</a>
+  - <a href="#data-processing-2" id="toc-data-processing-2">Data
+    Processing</a>
+  - <a href="#analysis-1" id="toc-analysis-1">Analysis?</a>
+    - <a href="#plot" id="toc-plot">Plot</a>
 
 ``` r
 knitr::opts_chunk$set(echo=TRUE, include=TRUE, comment="")
@@ -43,31 +54,6 @@ original <- read_csv("data/original_full.csv")
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 ``` r
-rank_sent <- read_csv("data/rank_sent.csv")
-```
-
-    Rows: 458 Columns: 31
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr  (7): ResponseId, AT ever use, RESP-GENDER, GENDER-4-TEXT, SEXUALITY, AG...
-    dbl (24): MUSIC-BRO, MUSIC-GIRL, MUSIC-DUDE, MUSIC-BRUH, MEETING-BRO, MEETIN...
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
-brobruh <- read_csv("data/brobruh.csv")
-```
-
-    Rows: 458 Columns: 7
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr (7): ResponseId, AT ever use, RESP-GENDER, GENDER-4-TEXT, SEXUALITY, AGE...
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
 head(original)
 ```
 
@@ -84,42 +70,6 @@ head(original)
     #   PARTNER <dbl>, COWORKER <dbl>, BOSS <dbl>, FRIEND <dbl>, STRANGER <dbl>,
     #   and abbreviated variable names ¹​`AT-EVER-USE`, ²​`RESP-GENDER`,
     #   ³​`GENDER-4-TEXT`, ⁴​SEXUALITY, ⁵​LANGUAGE, ⁶​OCCUPATION, ⁷​`ADDR-GENDER`
-
-``` r
-head(rank_sent)
-```
-
-    # A tibble: 6 × 31
-      Respon…¹ AT ev…² RESP-…³ GENDE…⁴ SEXUA…⁵ AGE   MUSIC…⁶ MUSIC…⁷ MUSIC…⁸ MUSIC…⁹
-      <chr>    <chr>   <chr>   <chr>   <chr>   <chr>   <dbl>   <dbl>   <dbl>   <dbl>
-    1 R_9FRUk… dude,m… Non-bi… <NA>    Gay     18-25       2       4       1       3
-    2 R_25EnK… dude,g… Femini… <NA>    Hetero  26-40       3       2       1       4
-    3 R_2pLWR… bro,du… Femini… <NA>    Bisexu… 26-40       3       2       1       4
-    4 R_PBtJh… bro,du… Mascul… <NA>    Straig… 26-40       2       3       1       4
-    5 R_22wZh… dude,m… Mascul… <NA>    Straig… 41-55       2       3       1       4
-    6 R_305B4… bro,du… Femini… <NA>    Bisexu… 18-25       3       2       1       4
-    # … with 21 more variables: `MEETING-BRO` <dbl>, `MEETING-GIRL` <dbl>,
-    #   `MEETING-DUDE` <dbl>, `MEETING-BRUH` <dbl>, `SHUTUP-BRO` <dbl>,
-    #   `SHUTUP-GIRL` <dbl>, `SHUTUP-DUDE` <dbl>, `SHUTUP-BRUH` <dbl>,
-    #   `GOODTOSEE-BRO` <dbl>, `GOODTOSEE-GIRL` <dbl>, `GOODTOSEE-DUDE` <dbl>,
-    #   `GOODTOSEE-BRUH` <dbl>, `SIGNAL-BRO` <dbl>, `SIGNAL-GIRL` <dbl>,
-    #   `SIGNAL-DUDE` <dbl>, `SIGNAL-BRUH` <dbl>, `EMAIL-BRO` <dbl>,
-    #   `EMAIL-GIRL` <dbl>, `EMAIL-DUDE` <dbl>, `EMAIL-BRUH` <dbl>, Q23 <chr>, …
-
-``` r
-head(brobruh)
-```
-
-    # A tibble: 6 × 7
-      ResponseId        `AT ever use`     `RESP-GENDER` GENDER…¹ SEXUA…² AGE   Q23  
-      <chr>             <chr>             <chr>         <chr>    <chr>   <chr> <chr>
-    1 R_9FRUk95l1fWKDZf dude,man          Non-binary    <NA>     Gay     18-25 <NA> 
-    2 R_25EnKuXyTReLPE2 dude,girl,man     Feminine      <NA>     Hetero  26-40 Depe…
-    3 R_2pLWRKVYVALdO6e bro,dude,girl,man Feminine      <NA>     Bisexu… 26-40 Bruh…
-    4 R_PBtJhKNv0JB10GJ bro,dude,man      Masculine     <NA>     Straig… 26-40 Bruh…
-    5 R_22wZhXw6DTa6krK dude,man          Masculine     <NA>     Straig… 41-55 <NA> 
-    6 R_305B45bvuFeKZUx bro,dude,girl,man Feminine      <NA>     Bisexu… 18-25 I do…
-    # … with abbreviated variable names ¹​`GENDER-4-TEXT`, ²​SEXUALITY
 
 ``` r
 # remove NAs in AT-EVER-USE and AGE column
@@ -227,11 +177,22 @@ org_clean <- original2 %>%
     This warning is displayed once every 8 hours.
     Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
 
+``` r
+# make another column - clean up `SEXUALITY` column as binary value
+org_clean <- org_clean %>%
+  mutate(SEXUALITY2 = grepl("(het|straight)", tolower(org_clean$SEXUALITY))) %>% 
+  relocate(SEXUALITY2, .after = SEXUALITY) %>% 
+  map_dfr(~ str_replace_all(., c("TRUE" = "Hetero", "FALSE" = "Non-Hetero"))) %>% 
+  mutate(FREQUENCY = as.numeric(FREQUENCY))
+```
+
 Okay, I have left with 26,439 values in total.
 
-# Analysis & Plots
+# Address Term
 
-## The usage of *DUDE* by gender and age
+## Analysis & Plots
+
+### The usage of *dude* by gender and age
 
 ``` r
 # sort 'dude' only
@@ -287,28 +248,6 @@ dude_df %>%
     3 Non-Binary       45
 
 ``` r
-dude_df %>% 
-  filter(TERM == "DUDE")
-```
-
-    # A tibble: 4,711 × 12
-       `RESP-ID`     ATUSE RESP-…¹ ADDR-…² SEXUA…³ AGE   LANGU…⁴ RACE  OCCUP…⁵ TERM 
-       <chr>         <chr> <chr>   <chr>   <chr>   <chr> <chr>   <chr> <chr>   <chr>
-     1 R_9FRUk95l1f… bro,… Non-Bi… Femini… Gay     18-25 1       White Editor… DUDE 
-     2 R_9FRUk95l1f… bro,… Non-Bi… Femini… Gay     18-25 1       White Editor… DUDE 
-     3 R_9FRUk95l1f… bro,… Non-Bi… Femini… Gay     18-25 1       White Editor… DUDE 
-     4 R_9FRUk95l1f… bro,… Non-Bi… Femini… Gay     18-25 1       White Editor… DUDE 
-     5 R_9FRUk95l1f… bro,… Non-Bi… Femini… Gay     18-25 1       White Editor… DUDE 
-     6 R_9FRUk95l1f… bro,… Non-Bi… Femini… Gay     18-25 1       White Editor… DUDE 
-     7 R_9FRUk95l1f… bro,… Non-Bi… Femini… Gay     18-25 1       White Editor… DUDE 
-     8 R_25EnKuXyTR… bro,… Femini… Femini… Hetero  26-40 1       white Studen… DUDE 
-     9 R_25EnKuXyTR… bro,… Femini… Femini… Hetero  26-40 1       white Studen… DUDE 
-    10 R_25EnKuXyTR… bro,… Femini… Femini… Hetero  26-40 1       white Studen… DUDE 
-    # … with 4,701 more rows, 2 more variables: `ADDR-RANK` <chr>, FREQUENCY <dbl>,
-    #   and abbreviated variable names ¹​`RESP-GENDER`, ²​`ADDR-GENDER`, ³​SEXUALITY,
-    #   ⁴​LANGUAGE, ⁵​OCCUPATION
-
-``` r
 # Plot - Dude Usage by gender and age - non-binary excluded
 
 dude_df %>% 
@@ -324,7 +263,7 @@ dude_df %>%
     `summarise()` has grouped output by 'AGE', 'ADDR-GENDER'. You can override
     using the `.groups` argument.
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](AT2023_code_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 # 이거를 퍼센티지로 표현해야 할 것 같은데..
@@ -390,7 +329,9 @@ dude_df %>%
     `summarise()` has grouped output by 'AGE', 'ADDR-GENDER'. You can override
     using the `.groups` argument.
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](AT2023_code_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+#### *Dude* WITHOUT considering `AGE`
 
 ``` r
 # Dude usage, WITHOUT considering age category
@@ -407,7 +348,7 @@ dude_df %>%
     `summarise()` has grouped output by 'ADDR-GENDER'. You can override using the
     `.groups` argument.
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](AT2023_code_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 dude_df %>% 
@@ -427,9 +368,9 @@ dude_df %>%
 
     Warning: Ignoring unknown aesthetics: nudge_y
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+![](AT2023_code_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
-## Use of dude by Gender of Speaker and Addressee (2023)
+#### Use of dude by Gender of Speaker and Addressee (2023)
 
 ``` r
 # Plot
@@ -445,11 +386,10 @@ dude_df %>%
     `summarise()` has grouped output by 'ADDR-GENDER'. You can override using the
     `.groups` argument.
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](AT2023_code_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 # Table
-
 dude_df %>% 
   filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
   group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
@@ -469,7 +409,7 @@ dude_df %>%
     3 Masculine     Feminine        211
     4 Masculine     Masculine        90
 
-## The usage of *dude* and *bro* by gender - non-binary exclusive
+### The usage of *dude* and *bro* by gender - non-binary exclusive
 
 ``` r
 # sort people who use dude and/or bro
@@ -515,7 +455,7 @@ dudebro %>%
     `summarise()` has grouped output by 'RESP-GENDER', 'ADDR-GENDER', 'TERM'. You
     can override using the `.groups` argument.
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](AT2023_code_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
 dudebro %>% 
@@ -532,7 +472,7 @@ dudebro %>%
     # … with 5 variables: RESP-GENDER <chr>, ADDR-GENDER <chr>, TERM <chr>,
     #   ADDR-RANK <chr>, mean_freq <dbl>
 
-## Is there any difference in the usage of *dude* by race?
+### Is there any difference in the usage of *dude* by race?
 
 ``` r
 org_clean %>% 
@@ -555,3 +495,419 @@ org_clean %>%
      9 Asian, Korean                1
     10 Australian                   1
     # … with 69 more rows
+
+# Sentence Rank
+
+## Data Processing
+
+``` r
+# load the data
+rank_sent <- read_csv("data/rank_sent.csv")
+```
+
+    Rows: 458 Columns: 31
+    ── Column specification ────────────────────────────────────────────────────────
+    Delimiter: ","
+    chr  (7): ResponseId, AT ever use, RESP-GENDER, GENDER-4-TEXT, SEXUALITY, AG...
+    dbl (24): MUSIC-BRO, MUSIC-GIRL, MUSIC-DUDE, MUSIC-BRUH, MEETING-BRO, MEETIN...
+
+    ℹ Use `spec()` to retrieve the full column specification for this data.
+    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+head(rank_sent)
+```
+
+    # A tibble: 6 × 31
+      Respon…¹ AT ev…² RESP-…³ GENDE…⁴ SEXUA…⁵ AGE   MUSIC…⁶ MUSIC…⁷ MUSIC…⁸ MUSIC…⁹
+      <chr>    <chr>   <chr>   <chr>   <chr>   <chr>   <dbl>   <dbl>   <dbl>   <dbl>
+    1 R_9FRUk… dude,m… Non-bi… <NA>    Gay     18-25       2       4       1       3
+    2 R_25EnK… dude,g… Femini… <NA>    Hetero  26-40       3       2       1       4
+    3 R_2pLWR… bro,du… Femini… <NA>    Bisexu… 26-40       3       2       1       4
+    4 R_PBtJh… bro,du… Mascul… <NA>    Straig… 26-40       2       3       1       4
+    5 R_22wZh… dude,m… Mascul… <NA>    Straig… 41-55       2       3       1       4
+    6 R_305B4… bro,du… Femini… <NA>    Bisexu… 18-25       3       2       1       4
+    # … with 21 more variables: `MEETING-BRO` <dbl>, `MEETING-GIRL` <dbl>,
+    #   `MEETING-DUDE` <dbl>, `MEETING-BRUH` <dbl>, `SHUTUP-BRO` <dbl>,
+    #   `SHUTUP-GIRL` <dbl>, `SHUTUP-DUDE` <dbl>, `SHUTUP-BRUH` <dbl>,
+    #   `GOODTOSEE-BRO` <dbl>, `GOODTOSEE-GIRL` <dbl>, `GOODTOSEE-DUDE` <dbl>,
+    #   `GOODTOSEE-BRUH` <dbl>, `SIGNAL-BRO` <dbl>, `SIGNAL-GIRL` <dbl>,
+    #   `SIGNAL-DUDE` <dbl>, `SIGNAL-BRUH` <dbl>, `EMAIL-BRO` <dbl>,
+    #   `EMAIL-GIRL` <dbl>, `EMAIL-DUDE` <dbl>, `EMAIL-BRUH` <dbl>, Q23 <chr>, …
+
+``` r
+rank_clean <- rank_sent %>% 
+  select(-Q23) %>% 
+  rename(`RESP-ID` = ResponseId,
+         ATUSE = `AT ever use`)
+```
+
+## Analysis
+
+### Organize by question
+
+#### MEETING
+
+``` r
+colnames(rank_clean)
+```
+
+     [1] "RESP-ID"        "ATUSE"          "RESP-GENDER"    "GENDER-4-TEXT" 
+     [5] "SEXUALITY"      "AGE"            "MUSIC-BRO"      "MUSIC-GIRL"    
+     [9] "MUSIC-DUDE"     "MUSIC-BRUH"     "MEETING-BRO"    "MEETING-GIRL"  
+    [13] "MEETING-DUDE"   "MEETING-BRUH"   "SHUTUP-BRO"     "SHUTUP-GIRL"   
+    [17] "SHUTUP-DUDE"    "SHUTUP-BRUH"    "GOODTOSEE-BRO"  "GOODTOSEE-GIRL"
+    [21] "GOODTOSEE-DUDE" "GOODTOSEE-BRUH" "SIGNAL-BRO"     "SIGNAL-GIRL"   
+    [25] "SIGNAL-DUDE"    "SIGNAL-BRUH"    "EMAIL-BRO"      "EMAIL-GIRL"    
+    [29] "EMAIL-DUDE"     "EMAIL-BRUH"    
+
+``` r
+rank_clean %>% 
+  select(contains(c("ID", "MUSIC")))
+```
+
+    # A tibble: 458 × 5
+       `RESP-ID`         `MUSIC-BRO` `MUSIC-GIRL` `MUSIC-DUDE` `MUSIC-BRUH`
+       <chr>                   <dbl>        <dbl>        <dbl>        <dbl>
+     1 R_9FRUk95l1fWKDZf           2            4            1            3
+     2 R_25EnKuXyTReLPE2           3            2            1            4
+     3 R_2pLWRKVYVALdO6e           3            2            1            4
+     4 R_PBtJhKNv0JB10GJ           2            3            1            4
+     5 R_22wZhXw6DTa6krK           2            3            1            4
+     6 R_305B45bvuFeKZUx           3            2            1            4
+     7 R_vjZzVyscBlf29AB           3            2            1            4
+     8 R_1IL6Ojmmkco93Hi           2            4            1            3
+     9 R_0W1f5Y9lpxf2LWV           2            3            1            4
+    10 R_3CCJoj9CLivBnt1           2            4            1            3
+    # … with 448 more rows
+
+``` r
+meeting <- rank_clean %>% 
+  select(contains(c("ID", "MEETING")))
+
+meeting_final <- meeting %>% 
+  rename_with(., ~gsub("MEETING-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Meeting", .after = TERM)
+
+meeting %>% 
+  rename_with(., ~gsub("MEETING-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  ggplot(aes(x = TERM, y = mean_rank)) +
+  geom_path(group = 1, color = "dark green") +
+  geom_point(color = "dark green") + 
+  geom_text(aes(label = round(mean_rank, 2), hjust = -0.7, nudge_x = 0.1), color = "dark green") +
+  scale_y_reverse(limits = c(5, 0.5)) +
+  labs(title = "Mean Rank - \"When is the meeting?\"")
+```
+
+    Warning: Ignoring unknown aesthetics: nudge_x
+
+![](AT2023_code_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+#### MUSIC
+
+``` r
+music <- rank_clean %>% 
+  select(contains(c("ID", "MUSIC")))
+
+music_final <- music %>% 
+  rename_with(., ~gsub("MUSIC-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Music", .after = TERM)
+```
+
+#### SHUTUP
+
+``` r
+shutup <- rank_clean %>% 
+  select(contains(c("ID", "SHUTUP")))
+
+shutup_final <- shutup %>% 
+  rename_with(., ~gsub("SHUTUP-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Shut up", .after = TERM)
+```
+
+#### GOODTOSEE
+
+``` r
+goodtosee <- rank_clean %>% 
+  select(contains(c("ID", "GOODTOSEE")))
+
+goodtosee_final <- goodtosee %>% 
+  rename_with(., ~gsub("GOODTOSEE-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Good to see", .after = TERM)
+```
+
+#### SIGNAL
+
+``` r
+signal <- rank_clean %>% 
+  select(contains(c("ID", "SIGNAL")))
+
+
+signal_final <- signal %>% 
+  rename_with(., ~gsub("SIGNAL-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Signal", .after = TERM)
+```
+
+#### EMAIL
+
+``` r
+email <- rank_clean %>% 
+  select(contains(c("ID", "EMAIL")))
+
+
+email_final <- email %>% 
+  rename_with(., ~gsub("EMAIL-", "", .x)) %>% 
+  pivot_longer(!`RESP-ID`, names_to = "TERM", values_to = "RANK") %>% 
+  na.omit(RANK) %>% 
+  group_by(TERM) %>% 
+  summarise(mean_rank = mean(RANK)) %>% 
+  mutate(SENT = "Email", .after = TERM)
+```
+
+#### Combine all the results
+
+``` r
+sent_final <- rbind(meeting_final, music_final, goodtosee_final, shutup_final, signal_final, email_final)
+
+sent_final %>% 
+  group_by(TERM) %>% 
+  summarize(mean = mean(mean_rank))
+```
+
+    # A tibble: 4 × 2
+      TERM   mean
+      <chr> <dbl>
+    1 BRO    2.33
+    2 BRUH   3.42
+    3 DUDE   1.39
+    4 GIRL   2.86
+
+``` r
+sent_final %>% 
+  ggplot(aes(x = TERM, y = mean_rank, group = SENT, col = SENT)) +
+  geom_path() +
+  geom_point() + 
+  scale_y_reverse(limits = c(4, 1))
+```
+
+![](AT2023_code_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+``` r
+  scale_x_discrete(limits = c("DUDE", "BRO", "BRUH", "GIRL"))
+```
+
+    <ggproto object: Class ScaleDiscretePosition, ScaleDiscrete, Scale, gg>
+        aesthetics: x xmin xmax xend
+        axis_order: function
+        break_info: function
+        break_positions: function
+        breaks: waiver
+        call: call
+        clone: function
+        dimension: function
+        drop: TRUE
+        expand: waiver
+        get_breaks: function
+        get_breaks_minor: function
+        get_labels: function
+        get_limits: function
+        guide: waiver
+        is_discrete: function
+        is_empty: function
+        labels: waiver
+        limits: DUDE BRO BRUH GIRL
+        make_sec_title: function
+        make_title: function
+        map: function
+        map_df: function
+        n.breaks.cache: NULL
+        na.translate: TRUE
+        na.value: NA
+        name: waiver
+        palette: function
+        palette.cache: NULL
+        position: bottom
+        range: <ggproto object: Class RangeDiscrete, Range, gg>
+            range: NULL
+            reset: function
+            train: function
+            super:  <ggproto object: Class RangeDiscrete, Range, gg>
+        range_c: <ggproto object: Class RangeContinuous, Range, gg>
+            range: NULL
+            reset: function
+            train: function
+            super:  <ggproto object: Class RangeContinuous, Range, gg>
+        rescale: function
+        reset: function
+        scale_name: position_d
+        train: function
+        train_df: function
+        transform: function
+        transform_df: function
+        super:  <ggproto object: Class ScaleDiscretePosition, ScaleDiscrete, Scale, gg>
+
+# *Bro* vs. *Bruh* - Difference
+
+## Data Processing
+
+``` r
+library(tidytext)
+library(stopwords)
+```
+
+    Warning: 패키지 'stopwords'는 R 버전 4.2.2에서 작성되었습니다
+
+``` r
+brobruh <- read_csv("data/brobruh.csv")
+```
+
+    Rows: 458 Columns: 7
+    ── Column specification ────────────────────────────────────────────────────────
+    Delimiter: ","
+    chr (7): ResponseId, AT ever use, RESP-GENDER, GENDER-4-TEXT, SEXUALITY, AGE...
+
+    ℹ Use `spec()` to retrieve the full column specification for this data.
+    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+head(brobruh)
+```
+
+    # A tibble: 6 × 7
+      ResponseId        `AT ever use`     `RESP-GENDER` GENDER…¹ SEXUA…² AGE   Q23  
+      <chr>             <chr>             <chr>         <chr>    <chr>   <chr> <chr>
+    1 R_9FRUk95l1fWKDZf dude,man          Non-binary    <NA>     Gay     18-25 <NA> 
+    2 R_25EnKuXyTReLPE2 dude,girl,man     Feminine      <NA>     Hetero  26-40 Depe…
+    3 R_2pLWRKVYVALdO6e bro,dude,girl,man Feminine      <NA>     Bisexu… 26-40 Bruh…
+    4 R_PBtJhKNv0JB10GJ bro,dude,man      Masculine     <NA>     Straig… 26-40 Bruh…
+    5 R_22wZhXw6DTa6krK dude,man          Masculine     <NA>     Straig… 41-55 <NA> 
+    6 R_305B45bvuFeKZUx bro,dude,girl,man Feminine      <NA>     Bisexu… 18-25 I do…
+    # … with abbreviated variable names ¹​`GENDER-4-TEXT`, ²​SEXUALITY
+
+``` r
+# tokenize the response by sentence, sort out the columns we don't need
+brobruh2 <- brobruh %>% 
+  rename(ANSWER = Q23) %>% 
+  select(-c(`GENDER-4-TEXT`, `AT ever use`)) %>% 
+  unnest_tokens(`SENT-TOK`, ANSWER, token = "sentences") %>% 
+# need to split the sents by comma, too.
+  unnest_tokens(`SENT-TOK2`, `SENT-TOK`, token = stringr::str_split, pattern = ",") %>% 
+  na.omit(`SENT-TOK`)
+```
+
+``` r
+brobruh_clean <- brobruh2 %>% 
+  mutate(BRO = grepl('bro', `SENT-TOK2`),
+         BRUH = grepl("bruh", `SENT-TOK2`)) %>% 
+  relocate(BRO, BRUH, .before = `SENT-TOK2`)
+
+bro_clean <- brobruh_clean %>% 
+  filter(BRO == TRUE & BRUH == FALSE)
+
+bruh_clean <- brobruh_clean %>% 
+  filter(BRO == FALSE & BRUH == TRUE)
+
+
+head(bro_clean)
+```
+
+    # A tibble: 6 × 7
+      ResponseId        `RESP-GENDER` SEXUALITY      AGE   BRO   BRUH  `SENT-TOK2`  
+      <chr>             <chr>         <chr>          <chr> <lgl> <lgl> <chr>        
+    1 R_305B45bvuFeKZUx Feminine      Bisexual       18-25 TRUE  FALSE " but do use…
+    2 R_vjZzVyscBlf29AB Masculine     cis            41-55 TRUE  FALSE "bro is more…
+    3 R_Rf6qeJ9SaOibzwJ Feminine      Hetero         18-25 TRUE  FALSE "bro is more…
+    4 R_2PofVys50lS49yH Masculine     Straight       26-40 TRUE  FALSE "bro is used…
+    5 R_2PofVys50lS49yH Masculine     Straight       26-40 TRUE  FALSE "\"bro"      
+    6 R_3g4NXfQGEg4j3Vx Masculine     heteroflexible 26-40 TRUE  FALSE "\"bro\" is …
+
+``` r
+head(bruh_clean)
+```
+
+    # A tibble: 6 × 7
+      ResponseId        `RESP-GENDER` SEXUALITY      AGE   BRO   BRUH  `SENT-TOK2`  
+      <chr>             <chr>         <chr>          <chr> <lgl> <lgl> <chr>        
+    1 R_2pLWRKVYVALdO6e Feminine      Bisexual queer 26-40 FALSE TRUE  "bruh seems …
+    2 R_PBtJhKNv0JB10GJ Masculine     Straight       26-40 FALSE TRUE  "bruh is gen…
+    3 R_305B45bvuFeKZUx Feminine      Bisexual       18-25 FALSE TRUE  "i don’t us… 
+    4 R_305B45bvuFeKZUx Feminine      Bisexual       18-25 FALSE TRUE  "i think it …
+    5 R_vjZzVyscBlf29AB Masculine     cis            41-55 FALSE TRUE  "bruh is mor…
+    6 R_1IL6Ojmmkco93Hi Feminine      bi             41-55 FALSE TRUE  "i don't rea…
+
+## Analysis?
+
+``` r
+# load up stopwords
+snowball <- stopwords(language = "en", source = "snowball", simplify = TRUE)
+nltk <- stopwords(language = "en", source = "nltk", simplify = TRUE)
+smart <- stopwords(language = "en", source = "smart", simplify = TRUE)
+
+# clean up -- sents containing 'bro'
+bro_final <- bro_clean %>% 
+  unnest_tokens(TOKEN, `SENT-TOK2`) %>%
+  filter(!(TOKEN %in% snowball | TOKEN %in% nltk | TOKEN %in% smart | 
+           TOKEN %in% c("bro", "bros", "bruh", "don’t", 'i’m', 'it’s',
+                        'people', "person", 'term', "address", "expression", "feel", "feels")))
+
+
+# clean up -- sents containing 'bruh'
+bruh_final <- bruh_clean %>% 
+  unnest_tokens(TOKEN, `SENT-TOK2`) %>% 
+  filter(!(TOKEN %in% snowball | TOKEN %in% nltk | TOKEN %in% smart | 
+           TOKEN %in% c("bro", "bros", "bruh", "don’t", 'i’m', 'it’s',
+                        'people', "person", 'term', "address", "expression", "feel", "feels")))
+```
+
+### Plot
+
+``` r
+# `bro` plot
+
+bro_final %>% 
+  count(TOKEN, sort = TRUE, name = "Count") %>% 
+  mutate(TOKEN = reorder(TOKEN, Count)) %>% 
+  head(20) %>% 
+  ggplot(aes(x = Count, y = TOKEN)) +
+  geom_col() + 
+  labs(title = "Top 20 Tokens Used to Describe 'Bro'")
+```
+
+![](AT2023_code_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+``` r
+#`bruh` plot
+bruh_final %>% 
+  count(TOKEN, sort = TRUE, name = "Count") %>% 
+  mutate(TOKEN = reorder(TOKEN, Count)) %>% 
+  head(20) %>% 
+  ggplot(aes(x = Count, y = TOKEN)) +
+  geom_col() + 
+  labs(title = "Top 20 Tokens Used to Describe 'Bruh'")
+```
+
+![](AT2023_code_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
