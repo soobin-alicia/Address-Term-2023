@@ -139,13 +139,14 @@ dude_df %>%
   geom_point() + 
   geom_text(aes(label = round(mean_freq, 2), vjust = -0.5, nudge_y = 0.1)) +
   geom_path() +
+  labs(title = "Reported Frequency of Dude by Gender of Speaker and Addressee") +
   ylim(1.9, 2.65)
 
 
 ```
 
 
-### The usage of *dude* and *bro* by gender - non-binary exclusive
+### Compare *dude* and *bro* by RESP & ADDR gender
 
 ```{r}
 # sort people who use dude and/or bro
@@ -156,36 +157,72 @@ dudebro <- org_clean %>%
 
 ```
 
-```{r}
-dudebro %>% 
-  select(`RESP-GENDER`, `ADDR-GENDER`) %>% 
-  unique()
-```
-
 
 ```{r}
 # plot - dude/bro usage by rank and gender
 
 dudebro %>% 
-  filter(TERM %in% c("DUDE", "BRO"), `RESP-GENDER` != c("Non-Binary")) %>% 
-  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `ADDR-RANK`) %>% 
+  filter(TERM %in% c("DUDE", "BRO")) %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `RANK`) %>% 
   summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
-  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = TERM, col = TERM)) +
+  ggplot(aes(x = `RANK`, y = mean_freq,  group = TERM, col = TERM)) +
   facet_wrap(`ADDR-GENDER`~`RESP-GENDER`, ncol = 1, strip.position = "right", 
              labeller = labeller(
-               `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"),
-               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"))) + 
+               `ADDR-GENDER` = c(`F`="Addr_F", `M`="Addr_M"),
+               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M", `Non-Binary`="Non-Binary"))) + 
   geom_line() +
   geom_point() + 
   scale_y_continuous(limits = c(0, 4)) +
-  labs(title = "Compare dude/bro based on interlocutors' gender (non-binary exclusive)", x = 'Relationship')
-  
+  labs(title = "Compare dude/bro based on interlocutors' gender", x = 'Relationship')
+
+```
+
+it contains too much information in one plot.
+need to make it more reader-friendly
+
+```{r}
+# DUDE
+dudebro %>% 
+  filter(TERM == "DUDE") %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `RANK`) %>% 
+  summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
+  unite(GENDER, `RESP-GENDER`, `ADDR-GENDER`)
+
 
 dudebro %>% 
-  filter(TERM %in% c("DUDE", "BRO") & `RESP-GENDER` %in% c("Feminine", "Masculine") & `ADDR-GENDER` %in% c("FEMININE", "MASCULINE")) %>% 
-  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `ADDR-RANK`) %>% 
-  summarise(mean_freq = mean(FREQUENCY, na.rm = TRUE))
+  filter(TERM == "DUDE") %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `RANK`) %>% 
+  summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
+  unite(GENDER, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  ggplot(aes(x = RANK, y = mean_freq, col = GENDER, group = GENDER)) +
+  geom_point() +
+  geom_line() + 
+  xlab("Relationship") +
+  labs(title = "Dude Usage by Gender") + 
+  ylim(0.5, 4)
+
+# BRO
+
+dudebro %>% 
+  filter(TERM == "BRO") %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `RANK`) %>% 
+  summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
+  unite(GENDER, `RESP-GENDER`, `ADDR-GENDER`)
+
+
+dudebro %>% 
+  filter(TERM == "BRO") %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `RANK`) %>% 
+  summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
+  unite(GENDER, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  ggplot(aes(x = RANK, y = mean_freq, col = GENDER, group = GENDER)) +
+  geom_point() +
+  geom_line() +
+  xlab("Relationship") +
+  labs(title = "Bro Usage by Gender") + 
+  ylim(0.5, 4)
 ```
+
 
 
 
@@ -446,34 +483,6 @@ bruh_final %>%
   ggplot(aes(x = Count, y = TOKEN)) +
   geom_col() + 
   labs(title = "Top 20 Tokens Used to Describe 'Bruh'")
-```
-
-
-## How many of the participants answered that they use *dude*, including those who answered they use none of the address terms in the option?
-
-```{r}
-# little bit of data cleaning
-org_clean
-```
-
-```{r}
-# make a new column called 'DUDE' -- if 'dude' is includede in `AT-EVER-USE`, TRUE. Otherwise, FALSE
-x <- org_1 %>% 
-  mutate(DUDE = grepl("dude", org_1$`AT-EVER-USE`) == TRUE) %>% 
-  group_by(`RESP-GENDER`, DUDE) %>% 
-  summarize(Count = n_distinct(`RESP-ID`))
-
-x
-
-```
-
-
-```{r}
-org_1 %>% 
-  group_by(DUDE) %>% 
-  summarize(count = n_distinct(`RESP-ID`)) 
-  filter(count >= 1)
-
 ```
 
 
