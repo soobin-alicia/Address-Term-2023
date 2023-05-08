@@ -10,10 +10,9 @@ Soobin Choi
     - <a href="#the-usage-of-dude-by-gender-and-age"
       id="toc-the-usage-of-dude-by-gender-and-age">The usage of <em>dude</em>
       by gender and age</a>
-    - <a href="#the-usage-of-dude-and-bro-by-gender---non-binary-exclusive"
-      id="toc-the-usage-of-dude-and-bro-by-gender---non-binary-exclusive">The
-      usage of <em>dude</em> and <em>bro</em> by gender - non-binary
-      exclusive</a>
+    - <a href="#compare-dude-and-bro-by-resp--addr-gender"
+      id="toc-compare-dude-and-bro-by-resp--addr-gender">Compare <em>dude</em>
+      and <em>bro</em> by RESP &amp; ADDR gender</a>
     - <a href="#is-there-any-difference-in-the-usage-of-dude-by-race"
       id="toc-is-there-any-difference-in-the-usage-of-dude-by-race">Is there
       any difference in the usage of <em>dude</em> by race?</a>
@@ -41,14 +40,14 @@ library(ggplot2)
 # Data Processing
 
 ``` r
-original <- read_csv("data/original_full.csv")
+original <- read_csv("data/original_num.csv")
 ```
 
-    Rows: 4580 Columns: 18
+    Rows: 458 Columns: 79
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
-    chr (10): ResponseId, AT-EVER-USE, RESP-GENDER, GENDER-4-TEXT, SEXUALITY, AG...
-    dbl  (8): LANGUAGE, PARENTS, SIBLING, PARTNER, COWORKER, BOSS, FRIEND, STRANGER
+    chr  (8): ResponseId, AT ever use, GENDER, GENDER_4_TEXT, SEXUALITY, AGE, RA...
+    dbl (71): LANGUAGE, BRO-F-parent, BRO-F-sibling, BRO-F-partner, BRO-F-cowork...
 
     ℹ Use `spec()` to retrieve the full column specification for this data.
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -57,94 +56,44 @@ original <- read_csv("data/original_full.csv")
 head(original)
 ```
 
-    # A tibble: 6 × 18
-      ResponseId AT-EV…¹ RESP-…² GENDE…³ SEXUA…⁴ AGE   LANGU…⁵ RACE  OCCUP…⁶ ADDR-…⁷
-      <chr>      <chr>   <chr>   <chr>   <chr>   <chr>   <dbl> <chr> <chr>   <chr>  
-    1 R_9FRUk95… dude,m… Non-bi… <NA>    Gay     18-25       1 White Editor… FEMINI…
-    2 R_25EnKuX… dude,g… Femini… <NA>    Hetero  26-40       1 white Studen… FEMINI…
-    3 R_2pLWRKV… bro,du… Femini… <NA>    Bisexu… 26-40       1 White PhD st… FEMINI…
-    4 R_PBtJhKN… bro,du… Mascul… <NA>    Straig… 26-40       1 White Teacher FEMINI…
-    5 R_22wZhXw… dude,m… Mascul… <NA>    Straig… 41-55       1 White Civil … FEMINI…
-    6 R_305B45b… bro,du… Femini… <NA>    Bisexu… 18-25       1 White Econom… FEMINI…
-    # … with 8 more variables: TERM <chr>, PARENTS <dbl>, SIBLING <dbl>,
-    #   PARTNER <dbl>, COWORKER <dbl>, BOSS <dbl>, FRIEND <dbl>, STRANGER <dbl>,
-    #   and abbreviated variable names ¹​`AT-EVER-USE`, ²​`RESP-GENDER`,
-    #   ³​`GENDER-4-TEXT`, ⁴​SEXUALITY, ⁵​LANGUAGE, ⁶​OCCUPATION, ⁷​`ADDR-GENDER`
+    # A tibble: 6 × 79
+      ResponseId  AT ev…¹ GENDER GENDE…² SEXUA…³ AGE   LANGU…⁴ RACE  OCCUP…⁵ BRO-F…⁶
+      <chr>       <chr>   <chr>  <chr>   <chr>   <chr>   <dbl> <chr> <chr>     <dbl>
+    1 R_9FRUk95l… dude,m… Non-b… <NA>    Gay     18-25       1 White Editor…      NA
+    2 R_25EnKuXy… dude,g… Femin… <NA>    Hetero  26-40       1 white Studen…      NA
+    3 R_2pLWRKVY… bro,du… Femin… <NA>    Bisexu… 26-40       1 White PhD st…       1
+    4 R_PBtJhKNv… bro,du… Mascu… <NA>    Straig… 26-40       1 White Teacher       1
+    5 R_22wZhXw6… dude,m… Mascu… <NA>    Straig… 41-55       1 White Civil …      NA
+    6 R_305B45bv… bro,du… Femin… <NA>    Bisexu… 18-25       1 White Econom…       1
+    # … with 69 more variables: `BRO-F-sibling` <dbl>, `BRO-F-partner` <dbl>,
+    #   `BRO-F-coworker` <dbl>, `BRO-F-boss` <dbl>, `BRO-F-friend` <dbl>,
+    #   `BRO-F-stranger` <dbl>, `BRO-M-parent` <dbl>, `BRO-M-sibling` <dbl>,
+    #   `BRO-M-partner` <dbl>, `BRO-M-coworker` <dbl>, `BRO-M-boss` <dbl>,
+    #   `BRO-M-friend` <dbl>, `BRO-M-stranger` <dbl>, `BRUH-F-parent` <dbl>,
+    #   `BRUH-F-sibling` <dbl>, `BRUH-F-partner` <dbl>, `BRUH-F-coworker` <dbl>,
+    #   `BRUH-F-boss` <dbl>, `BRUH-F-friend` <dbl>, `BRUH-F-stranger` <dbl>, …
 
 ``` r
-# remove NAs in AT-EVER-USE and AGE column
+# process the column for the analysis - term, addressee gender, relationship
+# And, change the name of columns
+
 original1 <- original %>% 
-  rename(`RESP-ID` = ResponseId) %>% 
-  rename(ATUSE = `AT-EVER-USE`) %>% 
-  filter(!is.na(ATUSE) & !is.na(AGE))
-
-# remove 'other' genders and move columns for better looking
-original2 <- original1 %>% 
-  mutate(`RESP-GENDER` = str_to_title(`RESP-GENDER`),
-         `ADDR-GENDER` = str_to_title(`ADDR-GENDER`)) %>%
-  filter(`RESP-GENDER` %in% c("Feminine", "Masculine", "Non-Binary")) %>% 
-  relocate(`ADDR-GENDER`, .after="RESP-GENDER")
+  pivot_longer(`BRO-F-parent`:`MAN-F-stranger`, names_to = "TERM", values_to = "FREQUENCY") %>% 
+  separate(col = TERM, c("TERM", "ADDR-GENDER", "RANK"), sep = "-") %>% 
+  rename(`RESP-ID` = ResponseId,
+         ATUSE = `AT ever use`,
+         `RESP-GENDER` = GENDER) %>% 
+  mutate(RANK = str_to_upper(RANK))
 ```
-
-Since it is hard to make plots when each rank is column, I need to
-change each column into value.
-
-``` r
-# test if it works
-toy_df <- head(original2, 20)
-
-toy_df %>% 
-  pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY")
-```
-
-    # A tibble: 140 × 13
-       `RESP-ID`   ATUSE RESP-…¹ ADDR-…² GENDE…³ SEXUA…⁴ AGE   LANGU…⁵ RACE  OCCUP…⁶
-       <chr>       <chr> <chr>   <chr>   <chr>   <chr>   <chr>   <dbl> <chr> <chr>  
-     1 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     2 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     3 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     4 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     5 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     6 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     7 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     8 R_25EnKuXy… dude… Femini… Femini… <NA>    Hetero  26-40       1 white Studen…
-     9 R_25EnKuXy… dude… Femini… Femini… <NA>    Hetero  26-40       1 white Studen…
-    10 R_25EnKuXy… dude… Femini… Femini… <NA>    Hetero  26-40       1 white Studen…
-    # … with 130 more rows, 3 more variables: TERM <chr>, `ADDR-RANK` <chr>,
-    #   FREQUENCY <dbl>, and abbreviated variable names ¹​`RESP-GENDER`,
-    #   ²​`ADDR-GENDER`, ³​`GENDER-4-TEXT`, ⁴​SEXUALITY, ⁵​LANGUAGE, ⁶​OCCUPATION
-
-``` r
-# good to go
-original2 %>% 
-  pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY")
-```
-
-    # A tibble: 26,439 × 13
-       `RESP-ID`   ATUSE RESP-…¹ ADDR-…² GENDE…³ SEXUA…⁴ AGE   LANGU…⁵ RACE  OCCUP…⁶
-       <chr>       <chr> <chr>   <chr>   <chr>   <chr>   <chr>   <dbl> <chr> <chr>  
-     1 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     2 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     3 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     4 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     5 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     6 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     7 R_9FRUk95l… dude… Non-Bi… Femini… <NA>    Gay     18-25       1 White Editor…
-     8 R_25EnKuXy… dude… Femini… Femini… <NA>    Hetero  26-40       1 white Studen…
-     9 R_25EnKuXy… dude… Femini… Femini… <NA>    Hetero  26-40       1 white Studen…
-    10 R_25EnKuXy… dude… Femini… Femini… <NA>    Hetero  26-40       1 white Studen…
-    # … with 26,429 more rows, 3 more variables: TERM <chr>, `ADDR-RANK` <chr>,
-    #   FREQUENCY <dbl>, and abbreviated variable names ¹​`RESP-GENDER`,
-    #   ²​`ADDR-GENDER`, ³​`GENDER-4-TEXT`, ⁴​SEXUALITY, ⁵​LANGUAGE, ⁶​OCCUPATION
 
 ``` r
 # check the categories in AGE column
-original2 %>% 
+original1 %>% 
   select(AGE) %>% 
   unique()
 ```
 
-    # A tibble: 5 × 1
+    # A tibble: 6 × 1
       AGE    
       <chr>  
     1 18-25  
@@ -152,15 +101,19 @@ original2 %>%
     3 41-55  
     4 56-70  
     5 Over 70
+    6 <NA>   
 
 ``` r
-# incorporate 'Over 70' to '56-70' + convert columns into values
-org_clean <- original2 %>% 
+original2 <- original1 %>% 
+# remove NAs in AGE column
+  filter(!is.na(AGE)) %>% 
+  mutate(`RESP-GENDER` = str_to_title(`RESP-GENDER`)) %>%
+  relocate(`ADDR-GENDER`, .after="RESP-GENDER") %>% 
+  # merge '56-70' and 'over 70' into one category
   mutate_all(funs(str_replace_all(., "56-70", "Over 70"))) %>% 
   mutate_all(funs(str_replace_all(., "Over 70", "56-Over 70"))) %>% 
-  pivot_longer(c("PARENTS", "SIBLING", "PARTNER", "COWORKER", "BOSS", "FRIEND", "STRANGER"), names_to = "ADDR-RANK", values_to = "FREQUENCY") %>% 
-  select(-`GENDER-4-TEXT`) %>% 
-  mutate(FREQUENCY = as.numeric(FREQUENCY))
+  # change 'other' gender to 'non-binary'
+  map_dfr(~ str_replace_all(., "Other", "Non-Binary"))
 ```
 
     Warning: `funs()` was deprecated in dplyr 0.8.0.
@@ -179,14 +132,14 @@ org_clean <- original2 %>%
 
 ``` r
 # make another column - clean up `SEXUALITY` column as binary value
-org_clean <- org_clean %>%
-  mutate(SEXUALITY2 = grepl("(het|straight)", tolower(org_clean$SEXUALITY))) %>% 
+org_clean <- original2 %>%
+  mutate(SEXUALITY2 = grepl("(het|straight)", tolower(original2$SEXUALITY))) %>% 
   relocate(SEXUALITY2, .after = SEXUALITY) %>% 
   map_dfr(~ str_replace_all(., c("TRUE" = "Hetero", "FALSE" = "Non-Hetero"))) %>% 
   mutate(FREQUENCY = as.numeric(FREQUENCY))
 ```
 
-Okay, I have left with 26,439 values in total.
+Okay, I have left with 31,990 values in total.
 
 # Address Term
 
@@ -195,109 +148,47 @@ Okay, I have left with 26,439 values in total.
 ### The usage of *dude* by gender and age
 
 ``` r
-# sort 'dude' only
+# make new column called 'DUDE': TRUE means the participant uses *dude*, FALSE means they don't
+
 dude_df <- org_clean %>% 
-  filter(grepl("dude", org_clean$ATUSE) == TRUE)
-
-
-# check the count of each age category
-dude_df %>% 
-  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
-  na.omit(AGE) %>% 
-  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
-  summarise(Count = n_distinct(`RESP-ID`))
+  mutate(DUDE = grepl("dude", org_clean$ATUSE))
+head(dude_df, 10)
 ```
 
-    `summarise()` has grouped output by 'AGE', 'ADDR-GENDER'. You can override
-    using the `.groups` argument.
+    # A tibble: 10 × 15
+       `RESP-ID`   ATUSE RESP-…¹ ADDR-…² GENDE…³ SEXUA…⁴ SEXUA…⁵ AGE   LANGU…⁶ RACE 
+       <chr>       <chr> <chr>   <chr>   <chr>   <chr>   <chr>   <chr> <chr>   <chr>
+     1 R_9FRUk95l… dude… Non-Bi… F       <NA>    Gay     Non-He… 18-25 1       White
+     2 R_9FRUk95l… dude… Non-Bi… F       <NA>    Gay     Non-He… 18-25 1       White
+     3 R_9FRUk95l… dude… Non-Bi… F       <NA>    Gay     Non-He… 18-25 1       White
+     4 R_9FRUk95l… dude… Non-Bi… F       <NA>    Gay     Non-He… 18-25 1       White
+     5 R_9FRUk95l… dude… Non-Bi… F       <NA>    Gay     Non-He… 18-25 1       White
+     6 R_9FRUk95l… dude… Non-Bi… F       <NA>    Gay     Non-He… 18-25 1       White
+     7 R_9FRUk95l… dude… Non-Bi… F       <NA>    Gay     Non-He… 18-25 1       White
+     8 R_9FRUk95l… dude… Non-Bi… M       <NA>    Gay     Non-He… 18-25 1       White
+     9 R_9FRUk95l… dude… Non-Bi… M       <NA>    Gay     Non-He… 18-25 1       White
+    10 R_9FRUk95l… dude… Non-Bi… M       <NA>    Gay     Non-He… 18-25 1       White
+    # … with 5 more variables: OCCUPATION <chr>, TERM <chr>, RANK <chr>,
+    #   FREQUENCY <dbl>, DUDE <lgl>, and abbreviated variable names ¹​`RESP-GENDER`,
+    #   ²​`ADDR-GENDER`, ³​GENDER_4_TEXT, ⁴​SEXUALITY, ⁵​SEXUALITY2, ⁶​LANGUAGE
 
-    # A tibble: 16 × 4
-    # Groups:   AGE, ADDR-GENDER [8]
-       AGE        `ADDR-GENDER` `RESP-GENDER` Count
-       <chr>      <chr>         <chr>         <int>
-     1 18-25      Feminine      Feminine         23
-     2 18-25      Feminine      Masculine        19
-     3 18-25      Masculine     Feminine         31
-     4 18-25      Masculine     Masculine        21
-     5 26-40      Feminine      Feminine         41
-     6 26-40      Feminine      Masculine        21
-     7 26-40      Masculine     Feminine         51
-     8 26-40      Masculine     Masculine        27
-     9 41-55      Feminine      Feminine         57
-    10 41-55      Feminine      Masculine        25
-    11 41-55      Masculine     Feminine         82
-    12 41-55      Masculine     Masculine        28
-    13 56-Over 70 Feminine      Feminine         18
-    14 56-Over 70 Feminine      Masculine         5
-    15 56-Over 70 Masculine     Feminine         20
-    16 56-Over 70 Masculine     Masculine        10
+#### *Dude* by RESP-gender and age
 
 ``` r
-# Count of each resp-gender category
-
+# Plot - Dude Usage by gender and age
 dude_df %>% 
-  group_by(`RESP-GENDER`) %>% 
-  summarise(n = n_distinct(`RESP-ID`))
-```
-
-    # A tibble: 3 × 2
-      `RESP-GENDER`     n
-      <chr>         <int>
-    1 Feminine        260
-    2 Masculine       114
-    3 Non-Binary       45
-
-``` r
-# Plot - Dude Usage by gender and age - non-binary excluded
-
-dude_df %>% 
-  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
-  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
+  group_by(`RESP-GENDER`, AGE, DUDE) %>% 
   summarise(Count = n_distinct(`RESP-ID`)) %>% 
-  ggplot(aes(x = `ADDR-GENDER`, y = Count, fill = `RESP-GENDER`)) +
-  facet_wrap(vars(AGE), ncol = 4) + 
-  geom_col(position = "dodge") + 
-  labs(title = "Dude Usage by gender and age - non-binary excluded")
+  ggplot(aes(x = AGE, y = Count, fill = DUDE)) + 
+  facet_wrap(vars(`RESP-GENDER`), ncol = 3) + 
+  geom_col(position = "fill") +
+  labs(title = "Dude Usage by Respondants' Gender and Age")
 ```
 
-    `summarise()` has grouped output by 'AGE', 'ADDR-GENDER'. You can override
+    `summarise()` has grouped output by 'RESP-GENDER', 'AGE'. You can override
     using the `.groups` argument.
 
 ![](AT2023_code_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
-
-``` r
-# 이거를 퍼센티지로 표현해야 할 것 같은데..
-dude_df %>% 
-  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
-  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
-  summarise(Count = n_distinct(`RESP-ID`)) %>% 
-  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
-  show
-```
-
-    `summarise()` has grouped output by 'AGE', 'ADDR-GENDER'. You can override
-    using the `.groups` argument.
-
-    # A tibble: 16 × 3
-    # Groups:   AGE [4]
-       AGE        Gender              Count
-       <chr>      <chr>               <int>
-     1 18-25      Feminine_Feminine      32
-     2 18-25      Masculine_Feminine     21
-     3 18-25      Feminine_Masculine     39
-     4 18-25      Masculine_Masculine    21
-     5 26-40      Feminine_Feminine      54
-     6 26-40      Masculine_Feminine     27
-     7 26-40      Feminine_Masculine     54
-     8 26-40      Masculine_Masculine    29
-     9 41-55      Feminine_Feminine      85
-    10 41-55      Masculine_Feminine     34
-    11 41-55      Feminine_Masculine     97
-    12 41-55      Masculine_Masculine    29
-    13 56-Over 70 Feminine_Feminine      34
-    14 56-Over 70 Masculine_Feminine     13
-    15 56-Over 70 Feminine_Masculine     21
-    16 56-Over 70 Masculine_Masculine    11
 
 ``` r
 '
@@ -313,54 +204,59 @@ dude_df %>%
 
     [1] "\ndude_df %>% \n  filter(TERM == \"DUDE\" & `RESP-GENDER` != \"Non-Binary\") %>% \n  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% \n  summarise(count = n_distinct(`RESP-ID`)) %>% \n  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% \n  ggplot(aes(x = AGE, weight = count, fill = Gender)) +\n  geom_bar(position = \"dodge\")\n"
 
+#### *Dude* respondent’s gender only
+
 ``` r
-# Plot - dodge barplot
+# consider respondent's gender only - total count of people who answered that they use dude
+
 dude_df %>% 
-  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
-  group_by(AGE, `ADDR-GENDER`, `RESP-GENDER`) %>% 
-  summarise(count = n_distinct(`RESP-ID`)) %>% 
-  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
-  ggplot(aes(x = AGE, y = count, fill = Gender)) +
-  geom_col(position = "dodge") + 
-  geom_text(aes(label = count), position = position_dodge(1), vjust = -0.7) +
-  ylim(0, 105)
+  group_by(`RESP-GENDER`, DUDE) %>% 
+  summarise(Count = n_distinct(`RESP-ID`))
 ```
 
-    `summarise()` has grouped output by 'AGE', 'ADDR-GENDER'. You can override
-    using the `.groups` argument.
+    `summarise()` has grouped output by 'RESP-GENDER'. You can override using the
+    `.groups` argument.
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
-
-#### *Dude* WITHOUT considering `AGE`
+    # A tibble: 6 × 3
+    # Groups:   RESP-GENDER [3]
+      `RESP-GENDER` DUDE  Count
+      <chr>         <lgl> <int>
+    1 Feminine      FALSE    74
+    2 Feminine      TRUE    211
+    3 Masculine     FALSE    28
+    4 Masculine     TRUE     90
+    5 Non-Binary    FALSE    10
+    6 Non-Binary    TRUE     44
 
 ``` r
-# Dude usage, WITHOUT considering age category
-
 dude_df %>% 
-  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
-  group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
+  group_by(`RESP-GENDER`, DUDE) %>% 
   summarise(Count = n_distinct(`RESP-ID`)) %>% 
-  ggplot(aes(x = `ADDR-GENDER`, y = Count, fill = `RESP-GENDER`)) +
-  geom_col(position = "dodge") + 
-  labs(title = "Dude Usage by gender - non-binary excluded")
+  ggplot(aes(x = `RESP-GENDER`, y = Count, fill = DUDE)) + 
+  geom_col(position = "fill") + 
+  ylab("Percentage") + 
+  labs(title = "Dude Usage by Respondents' Gender")
 ```
 
-    `summarise()` has grouped output by 'ADDR-GENDER'. You can override using the
+    `summarise()` has grouped output by 'RESP-GENDER'. You can override using the
     `.groups` argument.
 
 ![](AT2023_code_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
+#### *Dude* - Considering RESP & ADDR gender
+
 ``` r
 dude_df %>% 
-  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
-  na.omit(FREQUENCY) %>% 
+  filter(TERM == "DUDE") %>% 
+  filter(!is.na(FREQUENCY)) %>% 
   group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
   summarise(mean_freq = mean(FREQUENCY)) %>% 
   ggplot(aes(x = `RESP-GENDER`, y = mean_freq, col = `ADDR-GENDER`, group = `ADDR-GENDER`))+
   geom_point() + 
   geom_text(aes(label = round(mean_freq, 2), vjust = -0.5, nudge_y = 0.1)) +
   geom_path() +
-  ylim(1.9, 2.6)
+  labs(title = "Reported Frequency of Dude by Gender of Speaker and Addressee") +
+  ylim(1.9, 2.65)
 ```
 
     `summarise()` has grouped output by 'ADDR-GENDER'. You can override using the
@@ -368,48 +264,9 @@ dude_df %>%
 
     Warning: Ignoring unknown aesthetics: nudge_y
 
-![](AT2023_code_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
-
-#### Use of dude by Gender of Speaker and Addressee (2023)
-
-``` r
-# Plot
-dude_df %>% 
-  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
-  group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
-  summarise(Count = n_distinct(`RESP-ID`)) %>% 
-  ggplot(aes(x = `ADDR-GENDER`, y = Count, fill = `RESP-GENDER`)) +
-  geom_col(position = "dodge") + 
-  labs(title = "Dude Usage by gender - non-binary excluded")
-```
-
-    `summarise()` has grouped output by 'ADDR-GENDER'. You can override using the
-    `.groups` argument.
-
 ![](AT2023_code_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
-``` r
-# Table
-dude_df %>% 
-  filter(TERM == "DUDE" & `RESP-GENDER` != "Non-Binary") %>% 
-  group_by(`ADDR-GENDER`, `RESP-GENDER`) %>% 
-  summarise(Count = n_distinct(`RESP-ID`)) %>% 
-  show()
-```
-
-    `summarise()` has grouped output by 'ADDR-GENDER'. You can override using the
-    `.groups` argument.
-
-    # A tibble: 4 × 3
-    # Groups:   ADDR-GENDER [2]
-      `ADDR-GENDER` `RESP-GENDER` Count
-      <chr>         <chr>         <int>
-    1 Feminine      Feminine        205
-    2 Feminine      Masculine        95
-    3 Masculine     Feminine        211
-    4 Masculine     Masculine        90
-
-### The usage of *dude* and *bro* by gender - non-binary exclusive
+### Compare *dude* and *bro* by RESP & ADDR gender
 
 ``` r
 # sort people who use dude and/or bro
@@ -419,37 +276,71 @@ dudebro <- org_clean %>%
 ```
 
 ``` r
-dudebro %>% 
-  select(`RESP-GENDER`, `ADDR-GENDER`) %>% 
-  unique()
-```
-
-    # A tibble: 6 × 2
-      `RESP-GENDER` `ADDR-GENDER`
-      <chr>         <chr>        
-    1 Non-Binary    Feminine     
-    2 Feminine      Feminine     
-    3 Masculine     Feminine     
-    4 Non-Binary    Masculine    
-    5 Feminine      Masculine    
-    6 Masculine     Masculine    
-
-``` r
 # plot - dude/bro usage by rank and gender
 
 dudebro %>% 
-  filter(TERM %in% c("DUDE", "BRO"), `RESP-GENDER` != c("Non-Binary")) %>% 
-  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `ADDR-RANK`) %>% 
+  filter(TERM %in% c("DUDE", "BRO")) %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `RANK`) %>% 
   summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
-  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = TERM, col = TERM)) +
+  ggplot(aes(x = `RANK`, y = mean_freq,  group = TERM, col = TERM)) +
   facet_wrap(`ADDR-GENDER`~`RESP-GENDER`, ncol = 1, strip.position = "right", 
              labeller = labeller(
-               `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"),
-               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"))) + 
+               `ADDR-GENDER` = c(`F`="Addr_F", `M`="Addr_M"),
+               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M", `Non-Binary`="Non-Binary"))) + 
   geom_line() +
   geom_point() + 
   scale_y_continuous(limits = c(0, 4)) +
-  labs(title = "Compare dude/bro based on interlocutors' gender (non-binary exclusive)", x = 'Relationship')
+  labs(title = "Compare dude/bro based on interlocutors' gender", x = 'Relationship')
+```
+
+    `summarise()` has grouped output by 'RESP-GENDER', 'ADDR-GENDER', 'TERM'. You
+    can override using the `.groups` argument.
+
+![](AT2023_code_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+it contains too much information in one plot. need to make it more
+reader-friendly
+
+``` r
+# DUDE
+dudebro %>% 
+  filter(TERM == "DUDE") %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `RANK`) %>% 
+  summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
+  unite(GENDER, `RESP-GENDER`, `ADDR-GENDER`)
+```
+
+    `summarise()` has grouped output by 'RESP-GENDER', 'ADDR-GENDER', 'TERM'. You
+    can override using the `.groups` argument.
+
+    # A tibble: 42 × 4
+    # Groups:   TERM [1]
+       GENDER     TERM  RANK     mean_freq
+       <chr>      <chr> <chr>        <dbl>
+     1 Feminine_F DUDE  BOSS          1.32
+     2 Feminine_F DUDE  COWORKER      2.31
+     3 Feminine_F DUDE  FRIEND        3.04
+     4 Feminine_F DUDE  PARENT        1.40
+     5 Feminine_F DUDE  PARTNER       2.10
+     6 Feminine_F DUDE  SIBLING       2.22
+     7 Feminine_F DUDE  STRANGER      1.70
+     8 Feminine_M DUDE  BOSS          1.34
+     9 Feminine_M DUDE  COWORKER      2.44
+    10 Feminine_M DUDE  FRIEND        3.19
+    # … with 32 more rows
+
+``` r
+dudebro %>% 
+  filter(TERM == "DUDE") %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `RANK`) %>% 
+  summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
+  unite(GENDER, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  ggplot(aes(x = RANK, y = mean_freq, col = GENDER, group = GENDER)) +
+  geom_point() +
+  geom_line() + 
+  xlab("Relationship") +
+  labs(title = "Dude Usage by Gender") + 
+  ylim(0.5, 4)
 ```
 
     `summarise()` has grouped output by 'RESP-GENDER', 'ADDR-GENDER', 'TERM'. You
@@ -458,19 +349,52 @@ dudebro %>%
 ![](AT2023_code_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
+# BRO
+
 dudebro %>% 
-  filter(TERM %in% c("DUDE", "BRO") & `RESP-GENDER` %in% c("Feminine", "Masculine") & `ADDR-GENDER` %in% c("FEMININE", "MASCULINE")) %>% 
-  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `ADDR-RANK`) %>% 
-  summarise(mean_freq = mean(FREQUENCY, na.rm = TRUE))
+  filter(TERM == "BRO") %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `RANK`) %>% 
+  summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
+  unite(GENDER, `RESP-GENDER`, `ADDR-GENDER`)
 ```
 
     `summarise()` has grouped output by 'RESP-GENDER', 'ADDR-GENDER', 'TERM'. You
     can override using the `.groups` argument.
 
-    # A tibble: 0 × 5
-    # Groups:   RESP-GENDER, ADDR-GENDER, TERM [0]
-    # … with 5 variables: RESP-GENDER <chr>, ADDR-GENDER <chr>, TERM <chr>,
-    #   ADDR-RANK <chr>, mean_freq <dbl>
+    # A tibble: 42 × 4
+    # Groups:   TERM [1]
+       GENDER     TERM  RANK     mean_freq
+       <chr>      <chr> <chr>        <dbl>
+     1 Feminine_F BRO   BOSS          1.21
+     2 Feminine_F BRO   COWORKER      1.86
+     3 Feminine_F BRO   FRIEND        2.89
+     4 Feminine_F BRO   PARENT        1.21
+     5 Feminine_F BRO   PARTNER       1.71
+     6 Feminine_F BRO   SIBLING       2.20
+     7 Feminine_F BRO   STRANGER      1.57
+     8 Feminine_M BRO   BOSS          1.19
+     9 Feminine_M BRO   COWORKER      2.05
+    10 Feminine_M BRO   FRIEND        3.19
+    # … with 32 more rows
+
+``` r
+dudebro %>% 
+  filter(TERM == "BRO") %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`, TERM, `RANK`) %>% 
+  summarise(mean_freq = mean(as.numeric(FREQUENCY), na.rm = TRUE)) %>% 
+  unite(GENDER, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  ggplot(aes(x = RANK, y = mean_freq, col = GENDER, group = GENDER)) +
+  geom_point() +
+  geom_line() +
+  xlab("Relationship") +
+  labs(title = "Bro Usage by Gender") + 
+  ylim(0.5, 4)
+```
+
+    `summarise()` has grouped output by 'RESP-GENDER', 'ADDR-GENDER', 'TERM'. You
+    can override using the `.groups` argument.
+
+![](AT2023_code_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
 
 ### Is there any difference in the usage of *dude* by race?
 
@@ -481,7 +405,7 @@ org_clean %>%
   summarize(n = n_distinct(`RESP-ID`))
 ```
 
-    # A tibble: 79 × 2
+    # A tibble: 82 × 2
        RACE                         n
        <chr>                    <int>
      1 African American             1
@@ -489,12 +413,12 @@ org_clean %>%
      3 Anglo Australian (White)     1
      4 Arab                         1
      5 Ashkenazi Jewish             1
-     6 Asian                        6
+     6 Asian                        7
      7 Asian-American               1
      8 Asian Indian                 2
      9 Asian, Korean                1
     10 Australian                   1
-    # … with 69 more rows
+    # … with 72 more rows
 
 # Sentence Rank
 
@@ -887,7 +811,6 @@ bruh_final <- bruh_clean %>%
 
 ``` r
 # `bro` plot
-
 bro_final %>% 
   count(TOKEN, sort = TRUE, name = "Count") %>% 
   mutate(TOKEN = reorder(TOKEN, Count)) %>% 
