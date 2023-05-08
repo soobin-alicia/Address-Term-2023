@@ -1,0 +1,145 @@
+---
+title: "Address Term 2023"
+author: "Soobin Choi"
+date: "2023-05-01"
+output: 
+  github_document: 
+    toc: TRUE
+---
+
+```{r setup, message=FALSE}
+knitr::opts_chunk$set(echo=TRUE, include=TRUE, comment="")
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+
+
+# Data Processing
+
+```{r}
+original <- read_csv("data/original_num.csv")
+head(original)
+```
+
+```{r}
+# process the column for the analysis - term, addressee gender, relationship
+# And, change the name of columns
+
+original1 <- original %>% 
+  pivot_longer(`BRO-F-parent`:`MAN-F-stranger`, names_to = "TERM", values_to = "FREQUENCY") %>% 
+  separate(col = TERM, c("TERM", "ADDR-GENDER", "RANK"), sep = "-") %>% 
+  rename(`RESP-ID` = ResponseId,
+         ATUSE = `AT ever use`,
+         `RESP-GENDER` = GENDER) %>% 
+  mutate(RANK = str_to_upper(RANK))
+```
+
+
+
+```{r}
+# check the categories in AGE column
+original1 %>% 
+  select(AGE) %>% 
+  unique()
+
+
+original2 <- original1 %>% 
+# remove NAs in AGE column
+  filter(!is.na(AGE)) %>% 
+  mutate(`RESP-GENDER` = str_to_title(`RESP-GENDER`)) %>%
+  relocate(`ADDR-GENDER`, .after="RESP-GENDER") %>% 
+  # merge '56-70' and 'over 70' into one category
+  mutate_all(funs(str_replace_all(., "56-70", "Over 70"))) %>% 
+  mutate_all(funs(str_replace_all(., "Over 70", "56-Over 70"))) %>% 
+  # change 'other' gender to 'non-binary'
+  map_dfr(~ str_replace_all(., "Other", "Non-Binary"))
+
+```
+
+
+
+```{r}
+# make another column - clean up `SEXUALITY` column as binary value
+org_clean <- original2 %>%
+  mutate(SEXUALITY2 = grepl("(het|straight)", tolower(original2$SEXUALITY))) %>% 
+  relocate(SEXUALITY2, .after = SEXUALITY) %>% 
+  map_dfr(~ str_replace_all(., c("TRUE" = "Hetero", "FALSE" = "Non-Hetero"))) %>% 
+  mutate(FREQUENCY = as.numeric(FREQUENCY))
+
+```
+
+Okay, I have left with 31,990 values in total.
+
+# Address Term
+
+## Analysis & Plots
+
+### The usage of *dude* by gender and age
+
+```{r}
+# make new column called 'DUDE': TRUE means the participant uses *dude*, FALSE means they don't
+
+dude_df <- org_clean %>% 
+  mutate(DUDE = grepl("dude", org_clean$ATUSE))
+head(dude_df, 10)
+
+```
+
+
+```{r}
+# consider respondent's gender and age 
+dude_df %>% 
+  group_by(`RESP-GENDER`, AGE, DUDE) %>% 
+  summarise(Count = n_distinct(`RESP-ID`))
+
+
+# Plot
+dude_df %>% 
+  group_by(`RESP-GENDER`, AGE, DUDE) %>% 
+  summarise(Count = n_distinct(`RESP-ID`)) %>% 
+  ggplot(aes(x = AGE, y = Count, fill = DUDE)) + 
+  facet_wrap(vars(`RESP-GENDER`), ncol = 3) + 
+  geom_col(position = "fill") +
+  labs(title = "Dude Usage by Respondants' Gender and Age")
+
+```
+
+
+```{r}
+# consider respondent's gender only - total count of people who answered that they use dude
+
+dude_df %>% 
+  group_by(`RESP-GENDER`, DUDE) %>% 
+  summarise(Count = n_distinct(`RESP-ID`))
+
+dude_df %>% 
+  group_by(`RESP-GENDER`, DUDE) %>% 
+  summarise(Count = n_distinct(`RESP-ID`)) %>% 
+  ggplot(aes(x = `RESP-GENDER`, y = Count, fill = DUDE)) + 
+  geom_col(position = "fill") + 
+  ylab("Percentage") + 
+  labs(title = "Dude Usage by Respondents' Gender")
+```
+
+
+
+
+```{r}
+# plot만들때 참고할 구조
+
+'
+  ggplot(aes(x = `RESP-GENDER`, y = mean_freq, col = `ADDR-GENDER`, group = `ADDR-GENDER`))+
+  geom_point() + 
+  geom_text(aes(label = round(mean_freq, 2), vjust = -0.5, nudge_y = 0.1)) +
+  geom_path() +
+  ylim(1.9, 2.6)
+
+'
+```
+
+
+
+
+
+
